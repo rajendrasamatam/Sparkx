@@ -1,7 +1,9 @@
+// src/pages/Signup.jsx
 import React, { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { createUserWithEmailAndPassword } from 'firebase/auth';
 import { auth } from '../firebase';
+import styles from '../styles/Form.module.css'; // Import the styles
 
 const Signup = () => {
   const [email, setEmail] = useState('');
@@ -21,17 +23,31 @@ const Signup = () => {
   };
 
   return (
-    <div>
-      <h2>Sign Up</h2>
-      {error && <p style={{ color: 'red' }}>{error}</p>}
-      <form onSubmit={handleSubmit}>
-        <input type="email" value={email} onChange={(e) => setEmail(e.target.value)} required placeholder="Email Address" />
-        <br /><br />
-        <input type="password" value={password} onChange={(e) => setPassword(e.target.value)} required placeholder="Password" />
-        <br /><br />
-        <button type="submit">Sign Up</button>
+    <div className={styles.formContainer}>
+      <h2 className={styles.title}>Create an Account</h2>
+      <form onSubmit={handleSubmit} className={styles.form}>
+        <input
+          type="email"
+          value={email}
+          onChange={(e) => setEmail(e.target.value)}
+          required
+          placeholder="Email Address"
+          className={styles.input}
+        />
+        <input
+          type="password"
+          value={password}
+          onChange={(e) => setPassword(e.target.value)}
+          required
+          placeholder="Password"
+          className={styles.input}
+        />
+        {error && <p className={styles.error}>{error}</p>}
+        <button type="submit" className={styles.button}>Sign Up</button>
       </form>
-      <p>Already have an account? <Link to="/login">Log In</Link></p>
+      <p className={styles.redirect}>
+        Already have an account? <Link to="/login">Log In</Link>
+      </p>
     </div>
   );
 };
