@@ -1,19 +1,42 @@
 // src/pages/Dashboard.jsx
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import Sidebar from '../components/Sidebar';
 import StatCard from '../components/StatCard';
 import styles from '../styles/Dashboard.module.css';
-
-// Import icons for the cards
+import { db } from '../firebase'; // Import db
+import { collection, onSnapshot } from 'firebase/firestore'; // Import firestore functions
 import { FiHardDrive, FiAlertTriangle, FiCheckCircle, FiMap } from 'react-icons/fi';
 
 const Dashboard = () => {
-  // Placeholder data. In a real app, this would come from Firebase.
-  const stats = {
-    totalLights: 1250,
-    faultLights: 32,
-    resolvedLights: 1218,
-  };
+  // State to hold the dynamic stats
+  const [stats, setStats] = useState({
+    totalLights: 0,
+    faultLights: 0,
+    resolvedLights: 0,
+  });
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    const lightsCollectionRef = collection(db, 'streetlights');
+    
+    // Listen for real-time data from the 'streetlights' collection
+    const unsubscribe = onSnapshot(lightsCollectionRef, (snapshot) => {
+      const lightsData = snapshot.docs.map(doc => doc.data());
+      
+      const total = lightsData.length;
+      const faulty = lightsData.filter(light => light.status === 'faulty').length;
+      
+      setStats({
+        totalLights: total,
+        faultLights: faulty,
+        resolvedLights: total - faulty, // Resolved is just total minus faulty
+      });
+      setLoading(false);
+    });
+
+    // Cleanup subscription on unmount
+    return () => unsubscribe();
+  }, []);
 
   return (
     <div className={styles.dashboard}>
@@ -21,31 +44,31 @@ const Dashboard = () => {
       <main className={styles.mainContent}>
         <header className={styles.header}>
           <h1>Dashboard Overview</h1>
-          <p>Welcome back! Here's what's happening today.</p>
+          <p>Real-time status of all registered streetlights.</p>
         </header>
 
         <div className={styles.cardsContainer}>
           <StatCard
             icon={<FiHardDrive />}
             title="Total Lights"
-            count={stats.totalLights}
+            count={loading ? '...' : stats.totalLights}
           />
           <StatCard
             icon={<FiAlertTriangle style={{ color: '#f59e0b' }} />}
             title="Fault Lights"
-            count={stats.faultLights}
+            count={loading ? '...' : stats.faultLights}
           />
           <StatCard
             icon={<FiCheckCircle style={{ color: '#10b981' }} />}
             title="Resolved Lights"
-            count={stats.resolvedLights}
+            count={loading ? '...' : stats.resolvedLights}
           />
         </div>
 
         <div className={styles.mapContainer}>
           <FiMap />
           <h2>Map View</h2>
-          <p>The interactive map will be displayed in this area.</p>
+          <p>An interactive map could be integrated here in the future.</p>
         </div>
       </main>
     </div>

@@ -148,3 +148,40 @@
 .divider:not(:empty-child)::after {
   margin-left: .5em;
 }
+
+.install-id {
+  background-color: #eef2ff;
+  border: 1px solid #c7d2fe;
+  padding: 0.5rem 1rem;
+  border-radius: 6px;
+  text-align: center;
+  margin: 1.5rem 0;
+}
+
+.location-box {
+  margin-bottom: 1.5rem;
+}
+
+.secondary-button {
+  background-color: transparent !important;
+  color: var(--primary-color) !important;
+  border: 1px solid var(--primary-color);
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+}
+
+.location-captured {
+  text-align: center;
+  color: #166534;
+  background-color: #dcfce7;
+  padding: 1rem;
+  border-radius: 6px;
+}
+.location-captured p {
+  margin: 0;
+  font-weight: 500;
+  line-height: 1.5;
+}

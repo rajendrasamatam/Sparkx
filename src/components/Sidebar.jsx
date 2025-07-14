@@ -6,7 +6,7 @@ import { useAuth } from '../context/AuthContext';
 import { signOut } from 'firebase/auth';
 import { auth } from '../firebase';
 import styles from '../styles/Sidebar.module.css';
-import { FiLogOut, FiUser, FiZap, FiGrid } from 'react-icons/fi';
+import { FiLogOut, FiUser, FiZap, FiGrid, FiCpu } from 'react-icons/fi';
 import toast from 'react-hot-toast';
 
 const Sidebar = () => {
@@ -65,6 +65,11 @@ const Sidebar = () => {
         >
           <FiUser />
           <span>My Profile</span>
+        </NavLink>
+        {/* 👇 2. Add the new NavLink for Streetlights 👇 */}
+        <NavLink to="/streetlights" className={({isActive}) => isActive ? `${styles.navLink} ${styles.activeLink}` : styles.navLink}>
+          <FiCpu />
+          <span>Manage Lights</span>
         </NavLink>
       </nav>
 
