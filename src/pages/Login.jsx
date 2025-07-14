@@ -1,15 +1,24 @@
 // src/pages/Login.jsx
+
 import React, { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { signInWithEmailAndPassword, setPersistence, browserLocalPersistence, browserSessionPersistence } from 'firebase/auth'; // <-- Import persistence functions
+import { 
+  signInWithEmailAndPassword, 
+  setPersistence, 
+  browserLocalPersistence, // Remembers user after browser is closed
+  browserSessionPersistence,
+  GoogleAuthProvider, // <-- Import Google provider
+  signInWithPopup,   // Forgets user when browser is closed
+} from 'firebase/auth';
 import { auth } from '../firebase';
 import styles from '../styles/Form.module.css';
-import toast from 'react-hot-toast'; // Import toast for better feedback
+import toast from 'react-hot-toast';
+import { FcGoogle } from 'react-icons/fc'; // <-- Google Icon
 
 const Login = () => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
-  const [rememberMe, setRememberMe] = useState(true); // <-- State for checkbox, default to true
+  const [rememberMe, setRememberMe] = useState(true); // Default to "Remember Me"
   const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
 
@@ -18,16 +27,35 @@ const Login = () => {
     setLoading(true);
 
     try {
-      // Set persistence based on the checkbox
+      // 1. Determine which persistence level to use
       const persistence = rememberMe ? browserLocalPersistence : browserSessionPersistence;
+      // 2. Set the persistence for the auth instance
       await setPersistence(auth, persistence);
-
-      await signInWithEmailAndPassword(auth, email, password);
-      // No need for a toast here, successful login is obvious by redirection
+      // 3. Proceed with the sign-in attempt
+      await signInWithEmailAndPassword(auth, email, password);      
+      // On success, navigate to the dashboard. No toast needed here.
       navigate('/dashboard');
+
     } catch (err) {
-      toast.error("Failed to log in. Please check your credentials.");
-      console.error(err);
+      // On failure, show an error message
+      toast.error("Login failed. Please check your email and password.");
+      console.error("Login error:", err);
+    } finally {
+      // 4. Always stop the loading indicator
+      setLoading(false);
+    }
+  };
+
+    const handleGoogleSignIn = async () => {
+    setLoading(true);
+    const provider = new GoogleAuthProvider();
+    try {
+      await signInWithPopup(auth, provider);
+      toast.success("Signed in with Google successfully!");
+      navigate('/dashboard');
+    } catch (error) {
+      toast.error("Failed to sign in with Google.");
+      console.error("Google sign-in error:", error);
     } finally {
       setLoading(false);
     }
@@ -36,6 +64,15 @@ const Login = () => {
   return (
     <div className={styles.formContainer}>
       <h2 className={styles.title}>Log In to Your Account</h2>
+      {/* Google Sign-in Button */}
+      <button onClick={handleGoogleSignIn} className={`${styles.button} ${styles.googleButton}`} disabled={loading}>
+        <FcGoogle size={22} />
+        <span>Continue with Google</span>
+      </button>
+
+      <div className={styles.divider}>
+        <span>OR</span>
+      </div>
       <form onSubmit={handleSubmit} className={styles.form}>
         <input
           type="email"
@@ -54,7 +91,6 @@ const Login = () => {
           className={styles.input}
         />
 
-        {/* Remember Me Checkbox */}
         <div className={styles.extraOptions}>
           <label>
             <input

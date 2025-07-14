@@ -7,7 +7,8 @@ import Signup from './pages/Signup';
 import ForgotPassword from './pages/ForgotPassword';
 import Dashboard from './pages/Dashboard';
 import ProtectedRoute from './components/ProtectedRoute';
-import Profile from './pages/Profile'; 
+import Profile from './pages/Profile';
+import NotFound from './pages/NotFound'; 
 
 function App() {
   return (
@@ -23,6 +24,9 @@ function App() {
           {/* Protected Routes */}
           <Route path="/dashboard" element={<ProtectedRoute><Dashboard /></ProtectedRoute>} />
           <Route path="/profile" element={<ProtectedRoute><Profile /></ProtectedRoute>} /> {/* <-- Add Profile Route */}
+
+          {/* Catch-All 404 Route */}
+          <Route path="*" element={<NotFound />} /> {/* <-- 2. Add this as the last route */}
 
         </Routes>
       </Router>
