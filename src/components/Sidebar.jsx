@@ -11,8 +11,20 @@ const Sidebar = () => {
   const { currentUser } = useAuth();
   const navigate = useNavigate();
 
-  const handleLogout = async () => { /* ... (same as before) */ };
-
+  // THIS IS THE FUNCTION TO FIX
+  const handleLogout = async () => {
+    try {
+      await signOut(auth);
+      // This redirect is essential. It tells the app to move to the login page.
+      // Our ProtectedRoute component will then prevent access to the dashboard.
+      navigate('/login');
+      toast.success('Logged out successfully!');
+    } catch (error) {
+      console.error('Failed to log out', error);
+      toast.error('Failed to log out.');
+    }
+  };
+  
   return (
     <div className={styles.sidebar}>
       <div className={styles.logo}>
@@ -25,8 +37,9 @@ const Sidebar = () => {
         <FiUser className={styles.profileIcon} />
         <div className={styles.profileInfo}>
           {/* Show display name if it exists, otherwise "Welcome" */}
-          <span className={styles.profileName}>{currentUser?.displayName || 'Welcome'}</span>
-          <span className={styles.profileEmail}>{currentUser?.email}</span>
+          <span className={styles.profileName}>Welcome</span>
+          <span className={styles.profileEmail}>{currentUser?.displayName || currentUser?.email}</span>
+
         </div>
       </NavLink>
       

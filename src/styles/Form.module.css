@@ -77,3 +77,29 @@
 .redirect a:hover {
   text-decoration: underline;
 }
+
+/* ADD THIS TO THE END of src/styles/Form.module.css */
+
+.extraOptions {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-size: 0.875rem;
+  margin-top: -0.5rem; /* Pull it closer to the input above */
+}
+
+.extraOptions label {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  cursor: pointer;
+}
+
+.extraOptions a {
+  color: var(--primary-color);
+  text-decoration: none;
+}
+
+.extraOptions a:hover {
+  text-decoration: underline;
+}
