@@ -1,28 +1,53 @@
+// src/pages/Dashboard.jsx
 import React from 'react';
-import { useNavigate } from 'react-router-dom';
-import { useAuth } from '../context/AuthContext';
-import { signOut } from 'firebase/auth';
-import { auth } from '../firebase';
+import Sidebar from '../components/Sidebar';
+import StatCard from '../components/StatCard';
+import styles from '../styles/Dashboard.module.css';
+
+// Import icons for the cards
+import { FiHardDrive, FiAlertTriangle, FiCheckCircle, FiMap } from 'react-icons/fi';
 
 const Dashboard = () => {
-  const { currentUser } = useAuth();
-  const navigate = useNavigate();
-
-  const handleLogout = async () => {
-    try {
-      await signOut(auth);
-      navigate('/login');
-    } catch (error) {
-      console.error('Failed to log out', error);
-    }
+  // Placeholder data. In a real app, this would come from Firebase.
+  const stats = {
+    totalLights: 1250,
+    faultLights: 32,
+    resolvedLights: 1218,
   };
 
   return (
-    <div>
-      <h2>Dashboard</h2>
-      <p>Welcome, {currentUser && currentUser.email}!</p>
-      <p>This page is protected and can only be seen by logged-in users.</p>
-      <button onClick={handleLogout}>Log Out</button>
+    <div className={styles.dashboard}>
+      <Sidebar />
+      <main className={styles.mainContent}>
+        <header className={styles.header}>
+          <h1>Dashboard Overview</h1>
+          <p>Welcome back! Here's what's happening today.</p>
+        </header>
+
+        <div className={styles.cardsContainer}>
+          <StatCard
+            icon={<FiHardDrive />}
+            title="Total Lights"
+            count={stats.totalLights}
+          />
+          <StatCard
+            icon={<FiAlertTriangle style={{ color: '#f59e0b' }} />}
+            title="Fault Lights"
+            count={stats.faultLights}
+          />
+          <StatCard
+            icon={<FiCheckCircle style={{ color: '#10b981' }} />}
+            title="Resolved Lights"
+            count={stats.resolvedLights}
+          />
+        </div>
+
+        <div className={styles.mapContainer}>
+          <FiMap />
+          <h2>Map View</h2>
+          <p>The interactive map will be displayed in this area.</p>
+        </div>
+      </main>
     </div>
   );
 };

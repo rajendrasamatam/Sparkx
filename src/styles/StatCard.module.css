@@ -1,0 +1,36 @@
+/* src/styles/StatCard.module.css */
+.card {
+  display: flex;
+  align-items: center;
+  background-color: var(--card-background);
+  padding: 1.5rem;
+  border-radius: 8px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+  gap: 1.5rem;
+  flex-grow: 1; /* Allows cards to grow and fill space */
+}
+
+.iconWrapper {
+  font-size: 2.5rem; /* Makes the icon large */
+  color: var(--primary-color);
+  background-color: #e0e7ff; /* A light indigo background */
+  padding: 0.75rem;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.title {
+  margin: 0 0 0.25rem 0;
+  font-size: 1rem;
+  font-weight: 500;
+  color: #6b7280; /* A medium gray for the title */
+}
+
+.count {
+  margin: 0;
+  font-size: 2rem;
+  font-weight: 700;
+  color: var(--text-color);
+}

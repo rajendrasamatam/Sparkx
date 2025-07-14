@@ -1,0 +1,124 @@
+/* src/styles/Sidebar.module.css */
+.sidebar {
+  width: 260px;
+  background-color: var(--card-background);
+  height: 100vh;
+  display: flex;
+  flex-direction: column;
+  padding: 1.5rem;
+  box-sizing: border-box;
+  border-right: 1px solid var(--border-color);
+  position: fixed; /* Fix the sidebar */
+  top: 0;
+  left: 0;
+}
+
+.logo {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  font-size: 1.5rem;
+  font-weight: 700;
+  color: var(--primary-color);
+  margin-bottom: 2.5rem;
+}
+
+.profile {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  background-color: var(--background-color);
+  padding: 1rem;
+  border-radius: 8px;
+}
+
+.profileIcon {
+  font-size: 1.5rem;
+  color: #6b7280;
+}
+
+.profileInfo {
+  display: flex;
+  flex-direction: column;
+}
+
+.profileName {
+  font-size: 0.875rem;
+  color: #6b7280;
+}
+
+.profileEmail {
+  font-weight: 500;
+  color: var(--text-color);
+  /* Truncate long emails */
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 150px;
+}
+
+.nav {
+  flex-grow: 1; /* Pushes the logout button down */
+  margin-top: 2rem;
+}
+
+.logoutButton {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  width: 100%;
+  padding: 0.75rem 1rem;
+  font-size: 1rem;
+  font-weight: 500;
+  background-color: transparent;
+  border: 1px solid var(--border-color);
+  border-radius: 6px;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.logoutButton:hover {
+  background-color: #fce8e8;
+  color: #c53030;
+  border-color: #f7baba;
+}
+
+/* ADD THESE STYLES to src/styles/Sidebar.module.css */
+
+.nav {
+  flex-grow: 1;
+  margin-top: 2rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.navLink {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  padding: 0.75rem 1rem;
+  border-radius: 6px;
+  color: #374151;
+  text-decoration: none;
+  font-weight: 500;
+  transition: background-color 0.2s;
+}
+
+.navLink:hover {
+  background-color: var(--background-color);
+}
+
+.activeLink {
+  background-color: #eef2ff; /* Light indigo */
+  color: var(--primary-color);
+}
+
+/* Make the profile section also have a hover effect */
+.profile {
+    text-decoration: none; /* Remove underline from NavLink */
+    transition: background-color 0.2s;
+}
+.profile:hover {
+    background-color: #eef2ff;
+}
