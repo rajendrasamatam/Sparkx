@@ -6,14 +6,13 @@ import { useAuth } from '../context/AuthContext';
 import { signOut } from 'firebase/auth';
 import { auth } from '../firebase';
 import styles from '../styles/Sidebar.module.css';
-import { FiLogOut, FiUser, FiZap, FiGrid, FiCpu } from 'react-icons/fi';
+import { FiLogOut, FiUser, FiZap, FiGrid, FiCpu } from 'react-icons/fi'; // Added FiCpu icon
 import toast from 'react-hot-toast';
 
 const Sidebar = () => {
   const { currentUser } = useAuth();
   const navigate = useNavigate();
 
-  // Logout handler
   const handleLogout = async () => {
     try {
       await signOut(auth);
@@ -32,48 +31,34 @@ const Sidebar = () => {
         Sparkx
       </div>
 
-      {/* Profile Section - Clickable link to the profile page */}
-      <NavLink 
-        to="/profile" 
-        className={({isActive}) => isActive ? `${styles.profile} ${styles.activeLink}` : styles.profile}
-      >
-        {/* Conditionally render the user's photoURL or a default icon */}
+      <NavLink to="/profile" className={({isActive}) => isActive ? `${styles.profile} ${styles.activeLink}` : styles.profile}>
         {currentUser?.photoURL ? (
-          <img src={currentUser.photoURL} alt="User Avatar" className={styles.profileAvatar} />
+          <img src={currentUser.photoURL} alt="Avatar" className={styles.profileAvatar} />
         ) : (
           <FiUser className={styles.profileIcon} />
         )}
         <div className={styles.profileInfo}>
-        <span className={styles.profileName}>Welcome</span>
-        <span className={styles.profileEmail}>{currentUser?.displayName || currentUser?.email}</span>
-
+          <span className={styles.profileName}>{currentUser?.displayName || 'Welcome'}</span>
+          <span className={styles.profileEmail}>{currentUser?.email}</span>
         </div>
       </NavLink>
       
-      {/* Main Navigation Links */}
       <nav className={styles.nav}>
-        <NavLink 
-          to="/dashboard" 
-          className={({isActive}) => isActive ? `${styles.navLink} ${styles.activeLink}` : styles.navLink}
-        >
+        <NavLink to="/dashboard" className={({isActive}) => isActive ? `${styles.navLink} ${styles.activeLink}` : styles.navLink}>
           <FiGrid />
           <span>Dashboard</span>
         </NavLink>
-        <NavLink 
-          to="/profile" 
-          className={({isActive}) => isActive ? `${styles.navLink} ${styles.activeLink}` : styles.navLink}
-        >
-          <FiUser />
-          <span>My Profile</span>
-        </NavLink>
-        {/* 👇 2. Add the new NavLink for Streetlights 👇 */}
-        <NavLink to="/streetlights" className={({isActive}) => isActive ? `${styles.navLink} ${styles.activeLink}` : styles.navLink}>
+        {/* The New Link */}
+        <NavLink to="/manage-lights" className={({isActive}) => isActive ? `${styles.navLink} ${styles.activeLink}` : styles.navLink}>
           <FiCpu />
           <span>Manage Lights</span>
         </NavLink>
+        <NavLink to="/profile" className={({isActive}) => isActive ? `${styles.navLink} ${styles.activeLink}` : styles.navLink}>
+          <FiUser />
+          <span>My Profile</span>
+        </NavLink>
       </nav>
 
-      {/* Logout Button at the bottom */}
       <button onClick={handleLogout} className={styles.logoutButton}>
         <FiLogOut />
         <span>Log Out</span>
