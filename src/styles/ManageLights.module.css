@@ -1,0 +1,301 @@
+/* src/styles/ManageLights.module.css */
+/* A focused, redesigned stylesheet for the Manage Lights page. */
+
+/* --- Page Layout (borrowing from Profile for consistency) --- */
+.pageContainer {
+  display: flex;
+  background-color: var(--background-color);
+}
+
+.mainContent {
+  flex-grow: 1;
+  padding: 2rem 2.5rem;
+  margin-left: 260px; /* Sidebar width */
+}
+
+.header h1 {
+  margin: 0 0 0.25rem 0;
+  font-size: 2rem;
+  font-weight: 700;
+}
+
+.header p {
+  margin: 0 0 2rem 0;
+  font-size: 1rem;
+  color: #6b7280;
+}
+
+.card {
+  background-color: var(--card-background);
+  padding: 2rem;
+  border-radius: 8px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+  margin-bottom: 2rem;
+}
+
+.cardTitle {
+  font-size: 1.25rem;
+  font-weight: 600;
+  margin-top: 0;
+  margin-bottom: 1.5rem;
+}
+
+.button {
+  background-color: var(--primary-color);
+  color: white;
+  padding: 0.75rem 1.5rem;
+  font-size: 1rem;
+  font-weight: 500;
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: all 0.2s;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+.button:hover {
+  background-color: var(--primary-hover);
+  transform: translateY(-2px);
+  box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+}
+
+/* --- Redesigned Scanner Area --- */
+.scannerSection {
+  margin-top: 1.5rem;
+  padding: 1.5rem;
+  border: 1px dashed var(--border-color);
+  border-radius: 8px;
+  text-align: center;
+}
+
+.scannerContainer {
+  position: relative;
+  width: 100%;
+  max-width: 350px;
+  margin: 1rem auto 0;
+  border-radius: 8px;
+  overflow: hidden; /* Clips the video stream to the rounded corners */
+}
+
+/* This is the div where the library injects the video */
+.scannerContainer > div {
+  position: relative;
+}
+
+/* The Viewfinder Overlay */
+.scannerContainer::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  border-radius: 8px;
+  box-shadow: 0 0 0 5px rgba(255, 255, 255, 0.2), 
+              inset 0 0 0 5px rgba(255, 255, 255, 0.2);
+  pointer-events: none; /* Allows clicks to go through to the video */
+}
+
+/* --- Data Table Redesign --- */
+.tableContainer {
+  overflow-x: auto;
+}
+
+.lightsTable {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+.lightsTable th,
+.lightsTable td {
+  padding: 1rem;
+  text-align: left;
+  border-bottom: 1px solid var(--border-color);
+  white-space: nowrap;
+}
+
+.lightsTable thead th {
+  color: #6b7280;
+  font-size: 0.75rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.lightsTable tbody tr:hover {
+  background-color: #f9fafb;
+}
+
+.actionsCell {
+  text-align: right;
+}
+
+.actionButton {
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  padding: 0.5rem;
+  font-size: 1.125rem;
+  color: #6b7280;
+  transition: color 0.2s, transform 0.2s;
+}
+.actionButton:hover {
+  transform: scale(1.2);
+}
+
+.actionButton.edit:hover {
+  color: var(--primary-color);
+}
+
+.actionButton.delete:hover {
+  color: #ef4444;
+}
+
+.emptyState {
+  text-align: center;
+  padding: 3rem;
+  color: #6b7280;
+}
+
+
+/* --- Edit Modal Styles --- */
+.overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: rgba(17, 24, 39, 0.8);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 1000;
+  backdrop-filter: blur(4px);
+}
+.modal {
+  background: white;
+  width: 90vw;
+  max-width: 500px;
+  padding: 2rem;
+  border-radius: 8px;
+  position: relative;
+  outline: none;
+}
+.closeButton {
+  position: absolute;
+  top: 1rem;
+  right: 1rem;
+  font-size: 1.5rem;
+  color: #9ca3af;
+  background: none;
+  border: none;
+  cursor: pointer;
+}
+.formGroup {
+  margin-bottom: 1.5rem;
+}
+.formGroup label {
+  display: block;
+  font-weight: 500;
+  margin-bottom: 0.5rem;
+}
+.input {
+  width: 100%;
+  padding: 0.75rem 1rem;
+  font-size: 1rem;
+  border: 1px solid var(--border-color);
+  border-radius: 6px;
+}
+.input:disabled {
+  background-color: #f3f4f6;
+}
+
+/* --- Search & Filter Controls --- */
+.cardHeader {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 1.5rem;
+  border-bottom: 1px solid var(--border-color);
+  flex-wrap: wrap; /* Allows wrapping on smaller screens */
+  gap: 1rem;
+}
+
+.searchAndFilter {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+}
+
+.searchInput {
+  padding: 0.5rem 1rem;
+  font-size: 0.875rem;
+  border: 1px solid var(--border-color);
+  border-radius: 6px;
+  width: 250px;
+  transition: border-color 0.2s, box-shadow 0.2s;
+}
+.searchInput:focus {
+  outline: none;
+  border-color: var(--primary-color);
+  box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.2);
+}
+
+.filterGroup button {
+  padding: 0.5rem 1rem;
+  font-size: 0.875rem;
+  border: 1px solid var(--border-color);
+  background-color: transparent;
+  cursor: pointer;
+  transition: background-color 0.2s, color 0.2s;
+  color: #6b7280;
+}
+
+.filterGroup button:first-child {
+  border-top-left-radius: 6px;
+  border-bottom-left-radius: 6px;
+}
+
+.filterGroup button:last-child {
+  border-top-right-radius: 6px;
+  border-bottom-right-radius: 6px;
+  border-left: none;
+}
+
+.filterGroup button.active {
+  background-color: var(--primary-color);
+  color: white;
+  border-color: var(--primary-color);
+  z-index: 2;
+  position: relative;
+}
+
+/* --- Pagination Controls --- */
+.paginationContainer {
+  padding: 1rem 1.5rem;
+  border-top: 1px solid var(--border-color);
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-size: 0.875rem;
+  color: #6b7280;
+}
+
+.paginationContainer button {
+  background-color: white;
+  border: 1px solid var(--border-color);
+  padding: 0.5rem 1rem;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: background-color 0.2s;
+}
+
+.paginationContainer button:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.paginationContainer button:hover:not(:disabled) {
+  background-color: #f9fafb;
+}
