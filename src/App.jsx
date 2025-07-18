@@ -11,6 +11,7 @@ import ForgotPassword from './pages/ForgotPassword';
 import Dashboard from './pages/Dashboard';
 import Profile from './pages/Profile';
 import ManageLights from './pages/ManageLights'; // The new page
+import LightDetails from './pages/LightDetails';
 import NotFound from './pages/NotFound';
 
 // Import utility components
@@ -31,7 +32,8 @@ function App() {
           <Route path="/dashboard" element={<ProtectedRoute><Dashboard /></ProtectedRoute>} />
           <Route path="/profile" element={<ProtectedRoute><Profile /></ProtectedRoute>} />
           <Route path="/manage-lights" element={<ProtectedRoute><ManageLights /></ProtectedRoute>} />
-          
+          <Route path="/light/:id" element={<ProtectedRoute><LightDetails /></ProtectedRoute>} />
+
           {/* Catch-All 404 Route */}
           <Route path="*" element={<NotFound />} />
         </Routes>

@@ -299,3 +299,14 @@
 .paginationContainer button:hover:not(:disabled) {
   background-color: #f9fafb;
 }
+
+.idLink {
+  font-weight: bold;
+  color: var(--primary-color);
+  text-decoration: none;
+  transition: text-decoration 0.2s;
+}
+
+.idLink:hover {
+  text-decoration: underline;
+}

@@ -29,24 +29,30 @@
   margin-bottom: 2rem;
 }
 
-.mapContainer {
+.mapCard {
   background-color: var(--card-background);
   border-radius: 8px;
-  padding: 2rem;
-  text-align: center;
-  color: #9ca3af;
-  border: 2px dashed var(--border-color);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+  margin-top: 2rem;
+  overflow: hidden; /* Important for border-radius on map */
 }
 
-.mapContainer h2 {
-  color: var(--text-color);
-  margin: 1rem 0 0.5rem 0;
+.mapContainer {
+  height: 500px;
+  width: 100%;
+  background-color: #e5e7eb; /* A nice placeholder color while tiles load */
 }
 
-.mapContainer p {
-    margin: 0;
+.leafletMap {
+  height: 100%;
+  width: 100%;
 }
 
-.mapContainer svg {
-  font-size: 3rem;
+.loadingText {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  height: 100%;
+  color: #6b7280;
+  font-weight: 500;
 }

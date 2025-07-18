@@ -10,6 +10,7 @@ import toast from 'react-hot-toast';
 import styles from '../styles/ManageLights.module.css';
 import { FiTrash2, FiEdit, FiCamera, FiXCircle, FiPlus } from 'react-icons/fi';
 import StatusBadge from '../components/StatusBadge';
+import { Link } from 'react-router-dom'; 
 
 // QrScannerComponent remains the same
 function QrScannerComponent({ onScanSuccess }) {
@@ -137,37 +138,32 @@ const ManageLights = () => {
             <p>Scan, monitor, and manage the entire streetlight network.</p>
         </header>
 
-        {/* --- Card for Registering New Lights --- */}
+        {/* --- Card for Registering New Lights (no change) --- */}
         <div className={styles.card}>
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-            <h2 className={styles.cardTitle} style={{ border: 'none', marginBottom: 0 }}>Register New Light</h2>
-            <button className={styles.button} onClick={() => setShowScanner(prev => !prev)}>
-              {showScanner ? <FiXCircle/> : <FiCamera/>}
-              <span>{showScanner ? 'Close Scanner' : 'Open Scanner'}</span>
-            </button>
-          </div>
-          {showScanner && (
-            <div className={styles.scannerSection}>
-              <p style={{ color: '#6b7280', marginTop: 0 }}>Point the camera at a valid QR Code.</p>
-              <QrScannerComponent onScanSuccess={onScanSuccess} />
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                <h2 className={styles.cardTitle} style={{ border: 'none', marginBottom: 0 }}>Register New Light</h2>
+                <button className={styles.button} onClick={() => setShowScanner(prev => !prev)}>
+                    {showScanner ? <FiXCircle/> : <FiPlus />}
+                    <span>{showScanner ? 'Close Scanner' : 'Scan New Light'}</span>
+                </button>
             </div>
-          )}
+            {showScanner && (
+                <div className={styles.scannerSection}>
+                    <p style={{ color: '#6b7280', marginTop: 0 }}>Point the camera at a valid QR Code.</p>
+                    <QrScannerComponent onScanSuccess={onScanSuccess} />
+                </div>
+            )}
         </div>
-
-        {/* --- Edit Modal (No change needed here) --- */}
+        
+        {/* --- Edit Modal (no change) --- */}
         {currentLight && ( <Modal isOpen={isEditModalOpen} onRequestClose={() => setIsEditModalOpen(false)} className={styles.modal} overlayClassName={styles.overlay}><button onClick={() => setIsEditModalOpen(false)} className={styles.closeButton}>×</button><h2 className={styles.cardTitle}>Edit Light: {currentLight.lightId}</h2><form onSubmit={handleUpdateLight}><div className={styles.formGroup}><label htmlFor="lightId">Light ID</label><input id="lightId" type="text" value={currentLight.lightId} disabled className={styles.input} /></div><div className={styles.formGroup}><label htmlFor="status">Status</label><select id="status" value={newStatus} onChange={(e) => setNewStatus(e.target.value)} className={styles.input}><option value="working">Working</option><option value="faulty">Faulty</option><option value="under repair">Under Repair</option></select></div><button type="submit" disabled={isUpdating} className={styles.button}>{isUpdating ? 'Saving...' : 'Save Changes'}</button></form></Modal> )}
         
-        {/* --- Data Table Card with New Controls --- */}
+        {/* --- Data Table Card (no change) --- */}
         <div className={styles.card}>
           <div className={styles.cardHeader}>
             <h2 className={styles.cardTitle}>Registered Lights ({filteredLights.length})</h2>
             <div className={styles.searchAndFilter}>
-              <input 
-                type="text" 
-                placeholder="Search by ID..." 
-                className={styles.searchInput}
-                onChange={(e) => setSearchTerm(e.target.value)}
-              />
+              <input type="text" placeholder="Search by ID..." className={styles.searchInput} onChange={(e) => setSearchTerm(e.target.value)} />
               <div className={styles.filterGroup}>
                 <button onClick={() => setStatusFilter('all')} className={statusFilter === 'all' ? styles.active : ''}>All</button>
                 <button onClick={() => setStatusFilter('working')} className={statusFilter === 'working' ? styles.active : ''}>Working</button>
@@ -177,36 +173,44 @@ const ManageLights = () => {
             </div>
           </div>
           <div className={styles.tableContainer}>
-              <table className={styles.lightsTable}>
-                  <thead><tr><th>ID</th><th>Location</th><th>Status</th><th>Installed On</th><th className={styles.actionsCell}>Actions</th></tr></thead>
-                  <tbody>
-                    {loading ? (<tr><td colSpan="5" className={styles.emptyState}>Loading...</td></tr>) : 
-                     currentItems.length === 0 ? (<tr><td colSpan="5" className={styles.emptyState}>No lights match the current filter.</td></tr>) : 
-                     (currentItems.map(light => (
-                        <tr key={light.id}>
-                            <td><strong>{light.lightId}</strong></td>
-                            <td>{`${light.location.latitude.toFixed(4)}, ${light.location.longitude.toFixed(4)}`}</td>
-                            <td><StatusBadge status={light.status} /></td>
-                            <td>{formatDate(light.installedAt)}</td>
-                            <td className={styles.actionsCell}>
-                                <button onClick={() => handleEditClick(light)} className={`${styles.actionButton} ${styles.edit}`} title="Edit"><FiEdit /></button>
-                                <button onClick={() => handleDeleteLight(light.id)} className={`${styles.actionButton} ${styles.delete}`} title="Delete"><FiTrash2 /></button>
-                            </td>
-                        </tr>
-                     )))}
-                  </tbody>
-              </table>
-            </div>
-            {/* --- Pagination Controls --- */}
-            {totalPages > 1 && (
-              <div className={styles.paginationContainer}>
-                <span>Page {currentPage} of {totalPages}</span>
-                <div>
-                  <button onClick={() => paginate(currentPage - 1)} disabled={currentPage === 1}>Previous</button>
-                  <button onClick={() => paginate(currentPage + 1)} disabled={currentPage === totalPages} style={{marginLeft: '0.5rem'}}>Next</button>
-                </div>
-              </div>
-            )}
+            <table className={styles.lightsTable}>
+              <thead>
+                <tr>
+                  <th>ID</th>
+                  <th>Location</th>
+                  <th>Status</th>
+                  <th>Installed On</th>
+                  <th className={styles.actionsCell}>Actions</th>
+                </tr>
+              </thead>
+              <tbody>
+                {loading ? (
+                  <tr><td colSpan="5" className={styles.emptyState}>Loading...</td></tr>
+                ) : currentItems.length === 0 ? (
+                  <tr><td colSpan="5" className={styles.emptyState}>No lights match the current filter.</td></tr>
+                ) : (
+                  currentItems.map(light => (
+                    <tr key={light.id}>
+                      <td>
+                        {/* THIS IS THE SINGLE, CORRECT LINK */}
+                        <Link to={`/light/${light.id}`} className={styles.idLink}>
+                          {light.lightId}
+                        </Link>
+                      </td>
+                      <td>{`${light.location.latitude.toFixed(4)}, ${light.location.longitude.toFixed(4)}`}</td>
+                      <td><StatusBadge status={light.status} /></td>
+                      <td>{formatDate(light.installedAt)}</td>
+                      <td className={styles.actionsCell}>
+                        <button onClick={() => handleEditClick(light)} className={`${styles.actionButton} ${styles.edit}`} title="Edit"><FiEdit /></button>
+                        <button onClick={() => handleDeleteLight(light.id)} className={`${styles.actionButton} ${styles.delete}`} title="Delete"><FiTrash2 /></button>
+                      </td>
+                    </tr>
+                  ))
+                )}
+              </tbody>
+            </table>
+          </div>
+            {totalPages > 1 && ( <div className={styles.paginationContainer}><span>Page {currentPage} of {totalPages}</span><div><button onClick={() => paginate(currentPage - 1)} disabled={currentPage === 1}>Previous</button><button onClick={() => paginate(currentPage + 1)} disabled={currentPage === totalPages} style={{marginLeft: '0.5rem'}}>Next</button></div></div> )}
         </div>
       </main>
     </div>
