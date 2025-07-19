@@ -1,21 +1,22 @@
-// src/App.jsx
-
+import React from 'react';
 import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
 import { Toaster } from 'react-hot-toast';
 
-// Import all page components
+// Import Page Components
 import Home from './pages/Home';
-import Login from './pages/Login';
 import Signup from './pages/Signup';
+import Login from './pages/Login';
 import ForgotPassword from './pages/ForgotPassword';
 import Dashboard from './pages/Dashboard';
-import Profile from './pages/Profile';
-import ManageLights from './pages/ManageLights'; // The new page
+import ManageLights from './pages/ManageLights';
 import LightDetails from './pages/LightDetails';
+import ManageUsers from './pages/ManageUsers';
+import Profile from './pages/Profile';
 import NotFound from './pages/NotFound';
 
-// Import utility components
+// Import Route Components
 import ProtectedRoute from './components/ProtectedRoute';
+import AdminRoute from './components/AdminRoute';
 
 function App() {
   return (
@@ -27,12 +28,19 @@ function App() {
           <Route path="/signup" element={<Signup />} />
           <Route path="/login" element={<Login />} />
           <Route path="/forgot-password" element={<ForgotPassword />} />
-          
-          {/* Protected Routes */}
-          <Route path="/dashboard" element={<ProtectedRoute><Dashboard /></ProtectedRoute>} />
-          <Route path="/profile" element={<ProtectedRoute><Profile /></ProtectedRoute>} />
-          <Route path="/manage-lights" element={<ProtectedRoute><ManageLights /></ProtectedRoute>} />
-          <Route path="/light/:id" element={<ProtectedRoute><LightDetails /></ProtectedRoute>} />
+
+          {/* Protected Routes for All Logged-in Users */}
+          <Route element={<ProtectedRoute />}>
+            <Route path="/dashboard" element={<Dashboard />} />
+            <Route path="/manage-lights" element={<ManageLights />} />
+            <Route path="/light/:id" element={<LightDetails />} />
+            <Route path="/profile" element={<Profile />} />
+          </Route>
+
+          {/* Protected Routes for Admins Only */}
+          <Route element={<AdminRoute />}>
+            <Route path="/manage-users" element={<ManageUsers />} />
+          </Route>
 
           {/* Catch-All 404 Route */}
           <Route path="*" element={<NotFound />} />

@@ -1,7 +1,9 @@
 // src/context/AuthContext.jsx
+
 import React, { useContext, useState, useEffect } from 'react';
-import { auth } from '../firebase';
+import { auth, db } from '../firebase'; // Ensure 'db' is imported
 import { onAuthStateChanged } from 'firebase/auth';
+import { doc, onSnapshot } from 'firebase/firestore'; // Ensure 'doc' and 'onSnapshot' are imported
 
 const AuthContext = React.createContext();
 
@@ -11,26 +13,46 @@ export function useAuth() {
 
 export function AuthProvider({ children }) {
   const [currentUser, setCurrentUser] = useState(null);
+  const [userRole, setUserRole] = useState(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    // This listener is triggered on sign-in, sign-out, and initial load
-    const unsubscribe = onAuthStateChanged(auth, user => {
+    const unsubscribeAuth = onAuthStateChanged(auth, user => {
       setCurrentUser(user);
-      setLoading(false); // Set loading to false once we have the user status
+
+      if (user) {
+        // This is the critical part that fetches the role
+        const userDocRef = doc(db, "users", user.uid);
+        const unsubscribeRole = onSnapshot(userDocRef, (doc) => {
+          if (doc.exists()) {
+            // It reads the 'role' field from the document
+            setUserRole(doc.data().role);
+          } else {
+            console.error("User document not found in Firestore for UID:", user.uid);
+            setUserRole(null);
+          }
+          setLoading(false);
+        });
+        return () => unsubscribeRole();
+      } else {
+        setUserRole(null);
+        setLoading(false);
+      }
     });
 
-    // Cleanup subscription on unmount
-    return unsubscribe;
-  }, []); // Empty dependency array ensures this runs only once on mount
+    return () => unsubscribeAuth();
+  }, []);
 
+  // This is where the isAdmin flag is created
   const value = {
     currentUser,
+    userRole,
+    isAdmin: userRole === 'admin', // This must be a strict 'admin' check
+    isLineman: userRole === 'lineman'
   };
 
   return (
     <AuthContext.Provider value={value}>
-      {/* Don't render the app until the auth status is confirmed */}
       {!loading && children}
     </AuthContext.Provider>
   );

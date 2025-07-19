@@ -1,16 +1,14 @@
-// src/components/Sidebar.jsx
-
 import React from 'react';
 import { NavLink, useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { signOut } from 'firebase/auth';
 import { auth } from '../firebase';
 import styles from '../styles/Sidebar.module.css';
-import { FiLogOut, FiUser, FiZap, FiGrid, FiCpu } from 'react-icons/fi'; // Added FiCpu icon
+import { FiLogOut, FiUser, FiZap, FiGrid, FiCpu, FiUsers } from 'react-icons/fi';
 import toast from 'react-hot-toast';
 
 const Sidebar = () => {
-  const { currentUser } = useAuth();
+  const { currentUser, isAdmin } = useAuth();
   const navigate = useNavigate();
 
   const handleLogout = async () => {
@@ -48,7 +46,6 @@ const Sidebar = () => {
           <FiGrid />
           <span>Dashboard</span>
         </NavLink>
-        {/* The New Link */}
         <NavLink to="/manage-lights" className={({isActive}) => isActive ? `${styles.navLink} ${styles.activeLink}` : styles.navLink}>
           <FiCpu />
           <span>Manage Lights</span>
@@ -57,6 +54,12 @@ const Sidebar = () => {
           <FiUser />
           <span>My Profile</span>
         </NavLink>
+        {isAdmin && (
+          <NavLink to="/manage-users" className={({isActive}) => isActive ? `${styles.navLink} ${styles.activeLink}` : styles.navLink}>
+            <FiUsers />
+            <span>Manage Users</span>
+          </NavLink>
+        )}
       </nav>
 
       <button onClick={handleLogout} className={styles.logoutButton}>

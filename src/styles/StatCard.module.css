@@ -1,4 +1,3 @@
-/* src/styles/StatCard.module.css */
 .card {
   display: flex;
   align-items: center;
@@ -7,13 +6,13 @@
   border-radius: 8px;
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
   gap: 1.5rem;
-  flex-grow: 1; /* Allows cards to grow and fill space */
+  flex-grow: 1;
 }
 
 .iconWrapper {
-  font-size: 2.5rem; /* Makes the icon large */
+  font-size: 1.75rem;
   color: var(--primary-color);
-  background-color: #e0e7ff; /* A light indigo background */
+  background-color: #e0e7ff;
   padding: 0.75rem;
   border-radius: 50%;
   display: flex;
@@ -25,7 +24,7 @@
   margin: 0 0 0.25rem 0;
   font-size: 1rem;
   font-weight: 500;
-  color: #6b7280; /* A medium gray for the title */
+  color: #6b7280;
 }
 
 .count {

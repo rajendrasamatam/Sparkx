@@ -1,4 +1,3 @@
-/* src/styles/Sidebar.module.css */
 .sidebar {
   width: 260px;
   background-color: var(--card-background);
@@ -8,7 +7,7 @@
   padding: 1.5rem;
   box-sizing: border-box;
   border-right: 1px solid var(--border-color);
-  position: fixed; /* Fix the sidebar */
+  position: fixed;
   top: 0;
   left: 0;
 }
@@ -27,14 +26,29 @@
   display: flex;
   align-items: center;
   gap: 1rem;
-  background-color: var(--background-color);
   padding: 1rem;
   border-radius: 8px;
+  text-decoration: none;
+  transition: background-color 0.2s;
+}
+
+.profile:hover {
+  background-color: #eef2ff;
 }
 
 .profileIcon {
   font-size: 1.5rem;
   color: #6b7280;
+  background-color: #e5e7eb;
+  padding: 0.5rem;
+  border-radius: 50%;
+}
+
+.profileAvatar {
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  object-fit: cover;
 }
 
 .profileInfo {
@@ -43,47 +57,18 @@
 }
 
 .profileName {
-  font-size: 0.875rem;
-  color: #6b7280;
+  font-weight: 500;
+  color: var(--text-color);
 }
 
 .profileEmail {
-  font-weight: 500;
-  color: var(--text-color);
-  /* Truncate long emails */
+  font-size: 0.875rem;
+  color: #6b7280;
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
   max-width: 150px;
 }
-
-.nav {
-  flex-grow: 1; /* Pushes the logout button down */
-  margin-top: 2rem;
-}
-
-.logoutButton {
-  display: flex;
-  align-items: center;
-  gap: 0.75rem;
-  width: 100%;
-  padding: 0.75rem 1rem;
-  font-size: 1rem;
-  font-weight: 500;
-  background-color: transparent;
-  border: 1px solid var(--border-color);
-  border-radius: 6px;
-  cursor: pointer;
-  transition: all 0.2s;
-}
-
-.logoutButton:hover {
-  background-color: #fce8e8;
-  color: #c53030;
-  border-color: #f7baba;
-}
-
-/* ADD THESE STYLES to src/styles/Sidebar.module.css */
 
 .nav {
   flex-grow: 1;
@@ -110,31 +95,27 @@
 }
 
 .activeLink {
-  background-color: #eef2ff; /* Light indigo */
+  background-color: #eef2ff;
   color: var(--primary-color);
 }
 
-/* Make the profile section also have a hover effect */
-.profile {
-    text-decoration: none; /* Remove underline from NavLink */
-    transition: background-color 0.2s;
-}
-.profile:hover {
-    background-color: #eef2ff;
-}
-
-.profileIcon {
-  font-size: 1.5rem;
-  color: #6b7280;
-  background-color: #e5e7eb;
-  padding: 0.5rem;
-  border-radius: 50%;
+.logoutButton {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  width: 100%;
+  padding: 0.75rem 1rem;
+  font-size: 1rem;
+  font-weight: 500;
+  background-color: transparent;
+  border: 1px solid var(--border-color);
+  border-radius: 6px;
+  cursor: pointer;
+  transition: all 0.2s;
 }
 
-/* This is a NEW style for the actual image avatar */
-.profileAvatar {
-  width: 40px;
-  height: 40px;
-  border-radius: 50%;
-  object-fit: cover;
+.logoutButton:hover {
+  background-color: #fce8e8;
+  color: #c53030;
+  border-color: #f7baba;
 }

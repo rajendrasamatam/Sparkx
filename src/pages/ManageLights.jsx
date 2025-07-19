@@ -1,18 +1,16 @@
-// src/pages/ManageLights.jsx
-
 import React, { useState, useEffect, useMemo } from 'react';
+import { Link } from 'react-router-dom';
 import Sidebar from '../components/Sidebar';
 import Modal from 'react-modal';
 import { Html5QrcodeScanner } from 'html5-qrcode';
-import { db } from '../firebase';
+import { db, auth } from '../firebase';
 import { collection, addDoc, onSnapshot, deleteDoc, doc, query, orderBy, updateDoc, where, getDocs, Timestamp } from 'firebase/firestore';
 import toast from 'react-hot-toast';
 import styles from '../styles/ManageLights.module.css';
 import { FiTrash2, FiEdit, FiCamera, FiXCircle, FiPlus } from 'react-icons/fi';
 import StatusBadge from '../components/StatusBadge';
-import { Link } from 'react-router-dom'; 
+import { useAuth } from '../context/AuthContext';
 
-// QrScannerComponent remains the same
 function QrScannerComponent({ onScanSuccess }) {
   useEffect(() => {
     const scanner = new Html5QrcodeScanner("qr-reader-element", { qrbox: { width: 250, height: 250 }, fps: 5 }, false);
@@ -28,7 +26,7 @@ function QrScannerComponent({ onScanSuccess }) {
 }
 
 const ManageLights = () => {
-  // Original States
+  const { isAdmin, isLineman } = useAuth();
   const [lights, setLights] = useState([]);
   const [loading, setLoading] = useState(true);
   const [showScanner, setShowScanner] = useState(false);
@@ -36,12 +34,10 @@ const ManageLights = () => {
   const [currentLight, setCurrentLight] = useState(null);
   const [newStatus, setNewStatus] = useState('');
   const [isUpdating, setIsUpdating] = useState(false);
-
-  // --- NEW States for Search, Filter, and Pagination ---
   const [searchTerm, setSearchTerm] = useState('');
-  const [statusFilter, setStatusFilter] = useState('all'); // 'all', 'working', 'faulty', etc.
+  const [statusFilter, setStatusFilter] = useState('all');
   const [currentPage, setCurrentPage] = useState(1);
-  const itemsPerPage = 7; // Show 7 lights per page
+  const itemsPerPage = 7;
 
   const lightsCollectionRef = collection(db, 'streetlights');
 
@@ -54,46 +50,30 @@ const ManageLights = () => {
     return () => unsubscribe();
   }, []);
 
-  // --- Filtering and Searching Logic ---
   const filteredLights = useMemo(() => {
     return lights
-      .filter(light => {
-        // Status filter logic
-        if (statusFilter === 'all') return true;
-        return light.status === statusFilter;
-      })
-      .filter(light => {
-        // Search term logic (case-insensitive)
-        return light.lightId.toLowerCase().includes(searchTerm.toLowerCase());
-      });
+      .filter(light => (statusFilter === 'all' || light.status === statusFilter))
+      .filter(light => light.lightId.toLowerCase().includes(searchTerm.toLowerCase()));
   }, [lights, statusFilter, searchTerm]);
 
-  // --- Pagination Logic ---
-  const indexOfLastItem = currentPage * itemsPerPage;
-  const indexOfFirstItem = indexOfLastItem - itemsPerPage;
-  const currentItems = filteredLights.slice(indexOfFirstItem, indexOfLastItem);
+  const currentItems = filteredLights.slice((currentPage - 1) * itemsPerPage, currentPage * itemsPerPage);
   const totalPages = Math.ceil(filteredLights.length / itemsPerPage);
-
   const paginate = (pageNumber) => setCurrentPage(pageNumber);
 
-  // All other logic functions (onScanSuccess, handleEditClick, etc.) remain the same
   const onScanSuccess = async (lightId) => {
     setShowScanner(false);
     const toastId = toast.loading(`Processing ID: ${lightId}...`);
     try {
       const q = query(lightsCollectionRef, where("lightId", "==", lightId));
-      if (!(await getDocs(q)).empty) {
-        return toast.error(`Error: Light ID ${lightId} is already registered.`, { id: toastId });
-      }
+      if (!(await getDocs(q)).empty) return toast.error(`Error: Light ID ${lightId} is already registered.`, { id: toastId });
       toast.loading('Getting GPS location...', { id: toastId });
       navigator.geolocation.getCurrentPosition(
         async (pos) => {
           const { latitude, longitude } = pos.coords;
-          await addDoc(lightsCollectionRef, { lightId, location: { latitude, longitude }, status: 'working', installedAt: Timestamp.now() });
+          await addDoc(lightsCollectionRef, { lightId, location: { latitude, longitude }, status: 'working', installedAt: Timestamp.now(), registeredBy: auth.currentUser.displayName || auth.currentUser.email });
           toast.success(`Success! Light ${lightId} registered.`, { id: toastId });
         },
-        () => toast.error('Could not get location. Enable GPS.', { id: toastId }),
-        { enableHighAccuracy: true }
+        () => toast.error('Could not get location. Enable GPS.', { id: toastId }), { enableHighAccuracy: true }
       );
     } catch (error) { toast.error('An error occurred.', { id: toastId }); }
   };
@@ -113,7 +93,7 @@ const ManageLights = () => {
       await updateDoc(doc(db, 'streetlights', currentLight.id), { status: newStatus });
       toast.success('Status updated!', { id: toastId });
       setIsEditModalOpen(false);
-    } catch (error) { toast.error('Failed to update.', { id: toastId }); }
+    } catch (error) { toast.error('Failed to update.', { id: toastId }); } 
     finally { setIsUpdating(false); }
   };
 
@@ -133,33 +113,36 @@ const ManageLights = () => {
     <div className={styles.pageContainer}>
       <Sidebar />
       <main className={styles.mainContent}>
-        <header className={styles.header}>
-            <h1>Manage Streetlights</h1>
-            <p>Scan, monitor, and manage the entire streetlight network.</p>
-        </header>
-
-        {/* --- Card for Registering New Lights (no change) --- */}
-        <div className={styles.card}>
+        <header title="Manage Streetlights" subtitle="Scan, search, and manage all lights in the network." />
+        {(isLineman || isAdmin) &&
+          <div className={styles.card}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                <h2 className={styles.cardTitle} style={{ border: 'none', marginBottom: 0 }}>Register New Light</h2>
-                <button className={styles.button} onClick={() => setShowScanner(prev => !prev)}>
-                    {showScanner ? <FiXCircle/> : <FiPlus />}
-                    <span>{showScanner ? 'Close Scanner' : 'Scan New Light'}</span>
-                </button>
+              <h2 className={styles.cardTitle} style={{ border: 'none', marginBottom: 0 }}>Register New Light</h2>
+              <button className={styles.primaryButton} onClick={() => setShowScanner(prev => !prev)}>
+                {showScanner ? <FiXCircle/> : <FiCamera/>}
+                <span>{showScanner ? 'Close Scanner' : 'Open Scanner'}</span>
+              </button>
             </div>
             {showScanner && (
-                <div className={styles.scannerSection}>
-                    <p style={{ color: '#6b7280', marginTop: 0 }}>Point the camera at a valid QR Code.</p>
-                    <QrScannerComponent onScanSuccess={onScanSuccess} />
-                </div>
+              <div className={styles.scannerSection}>
+                <p style={{ color: '#6b7280', marginTop: 0 }}>Point the camera at a valid QR Code.</p>
+                <QrScannerComponent onScanSuccess={onScanSuccess} />
+              </div>
             )}
-        </div>
-        
-        {/* --- Edit Modal (no change) --- */}
-        {currentLight && ( <Modal isOpen={isEditModalOpen} onRequestClose={() => setIsEditModalOpen(false)} className={styles.modal} overlayClassName={styles.overlay}><button onClick={() => setIsEditModalOpen(false)} className={styles.closeButton}>×</button><h2 className={styles.cardTitle}>Edit Light: {currentLight.lightId}</h2><form onSubmit={handleUpdateLight}><div className={styles.formGroup}><label htmlFor="lightId">Light ID</label><input id="lightId" type="text" value={currentLight.lightId} disabled className={styles.input} /></div><div className={styles.formGroup}><label htmlFor="status">Status</label><select id="status" value={newStatus} onChange={(e) => setNewStatus(e.target.value)} className={styles.input}><option value="working">Working</option><option value="faulty">Faulty</option><option value="under repair">Under Repair</option></select></div><button type="submit" disabled={isUpdating} className={styles.button}>{isUpdating ? 'Saving...' : 'Save Changes'}</button></form></Modal> )}
-        
-        {/* --- Data Table Card (no change) --- */}
-        <div className={styles.card}>
+          </div>
+        }
+        {currentLight && (
+          <Modal isOpen={isEditModalOpen} onRequestClose={() => setIsEditModalOpen(false)} className={styles.modal} overlayClassName={styles.overlay}>
+            <button onClick={() => setIsEditModalOpen(false)} className={styles.closeButton}>×</button>
+            <h2 className={styles.modalTitle}>Edit Light: {currentLight.lightId}</h2>
+            <form onSubmit={handleUpdateLight}>
+              <div className={styles.formGroup}><label htmlFor="lightId">Light ID</label><input id="lightId" type="text" value={currentLight.lightId} disabled className={styles.input} /></div>
+              <div className={styles.formGroup}><label htmlFor="status">Status</label><select id="status" value={newStatus} onChange={(e) => setNewStatus(e.target.value)} className={styles.input}><option value="working">Working</option><option value="faulty">Faulty</option><option value="under repair">Under Repair</option></select></div>
+              <button type="submit" disabled={isUpdating} className={styles.primaryButton}>{isUpdating ? 'Saving...' : 'Save Changes'}</button>
+            </form>
+          </Modal>
+        )}
+        <div className={styles.dataCard}>
           <div className={styles.cardHeader}>
             <h2 className={styles.cardTitle}>Registered Lights ({filteredLights.length})</h2>
             <div className={styles.searchAndFilter}>
@@ -173,48 +156,30 @@ const ManageLights = () => {
             </div>
           </div>
           <div className={styles.tableContainer}>
-            <table className={styles.lightsTable}>
-              <thead>
-                <tr>
-                  <th>ID</th>
-                  <th>Location</th>
-                  <th>Status</th>
-                  <th>Installed On</th>
-                  <th className={styles.actionsCell}>Actions</th>
-                </tr>
-              </thead>
-              <tbody>
-                {loading ? (
-                  <tr><td colSpan="5" className={styles.emptyState}>Loading...</td></tr>
-                ) : currentItems.length === 0 ? (
-                  <tr><td colSpan="5" className={styles.emptyState}>No lights match the current filter.</td></tr>
-                ) : (
-                  currentItems.map(light => (
-                    <tr key={light.id}>
-                      <td>
-                        {/* THIS IS THE SINGLE, CORRECT LINK */}
-                        <Link to={`/light/${light.id}`} className={styles.idLink}>
-                          {light.lightId}
-                        </Link>
-                      </td>
-                      <td>{`${light.location.latitude.toFixed(4)}, ${light.location.longitude.toFixed(4)}`}</td>
-                      <td><StatusBadge status={light.status} /></td>
-                      <td>{formatDate(light.installedAt)}</td>
-                      <td className={styles.actionsCell}>
-                        <button onClick={() => handleEditClick(light)} className={`${styles.actionButton} ${styles.edit}`} title="Edit"><FiEdit /></button>
-                        <button onClick={() => handleDeleteLight(light.id)} className={`${styles.actionButton} ${styles.delete}`} title="Delete"><FiTrash2 /></button>
-                      </td>
-                    </tr>
-                  ))
-                )}
-              </tbody>
-            </table>
-          </div>
+              <table className={styles.lightsTable}>
+                  <thead><tr><th>ID</th><th>Location</th><th>Status</th><th>Installed On</th><th className={styles.actionsCell}>Actions</th></tr></thead>
+                  <tbody>
+                    {loading ? (<tr><td colSpan="5" className={styles.emptyState}>Loading...</td></tr>) : 
+                     currentItems.length === 0 ? (<tr><td colSpan="5" className={styles.emptyState}>No lights match the current filter.</td></tr>) : 
+                     (currentItems.map(light => (
+                        <tr key={light.id}>
+                            <td><Link to={`/light/${light.id}`} className={styles.idLink}>{light.lightId}</Link></td>
+                            <td>{`${light.location.latitude.toFixed(4)}, ${light.location.longitude.toFixed(4)}`}</td>
+                            <td><StatusBadge status={light.status} /></td>
+                            <td>{formatDate(light.installedAt)}</td>
+                            <td className={styles.actionsCell}>
+                                {(isLineman || isAdmin) && <button onClick={() => handleEditClick(light)} className={`${styles.actionButton} ${styles.edit}`} title="Edit"><FiEdit /></button>}
+                                {isAdmin && <button onClick={() => handleDeleteLight(light.id)} className={`${styles.actionButton} ${styles.delete}`} title="Delete"><FiTrash2 /></button>}
+                            </td>
+                        </tr>
+                     )))}
+                  </tbody>
+              </table>
+            </div>
             {totalPages > 1 && ( <div className={styles.paginationContainer}><span>Page {currentPage} of {totalPages}</span><div><button onClick={() => paginate(currentPage - 1)} disabled={currentPage === 1}>Previous</button><button onClick={() => paginate(currentPage + 1)} disabled={currentPage === totalPages} style={{marginLeft: '0.5rem'}}>Next</button></div></div> )}
         </div>
       </main>
     </div>
   );
 };
-
 export default ManageLights;

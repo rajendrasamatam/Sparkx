@@ -1,61 +1,65 @@
-// src/pages/Login.jsx
-
 import React, { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { 
-  signInWithEmailAndPassword, 
-  setPersistence, 
-  browserLocalPersistence, // Remembers user after browser is closed
+import {
+  signInWithEmailAndPassword,
+  setPersistence,
+  browserLocalPersistence,
   browserSessionPersistence,
-  GoogleAuthProvider, // <-- Import Google provider
-  signInWithPopup,   // Forgets user when browser is closed
+  GoogleAuthProvider,
+  signInWithPopup,
 } from 'firebase/auth';
-import { auth } from '../firebase';
+import { setDoc, doc, getDoc } from 'firebase/firestore';
+import { auth, db } from '../firebase';
 import styles from '../styles/Form.module.css';
 import toast from 'react-hot-toast';
-import { FcGoogle } from 'react-icons/fc'; // <-- Google Icon
+import { FcGoogle } from 'react-icons/fc';
 
 const Login = () => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
-  const [rememberMe, setRememberMe] = useState(true); // Default to "Remember Me"
+  const [rememberMe, setRememberMe] = useState(true);
   const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
 
-  const handleSubmit = async (e) => {
+  const createUserDocument = async (user) => {
+    const userDocRef = doc(db, "users", user.uid);
+    const docSnap = await getDoc(userDocRef);
+    if (!docSnap.exists()) {
+      await setDoc(userDocRef, {
+        uid: user.uid,
+        displayName: user.displayName,
+        email: user.email,
+        role: 'lineman'
+      });
+    }
+  };
+
+  const handleEmailSubmit = async (e) => {
     e.preventDefault();
     setLoading(true);
-
     try {
-      // 1. Determine which persistence level to use
       const persistence = rememberMe ? browserLocalPersistence : browserSessionPersistence;
-      // 2. Set the persistence for the auth instance
       await setPersistence(auth, persistence);
-      // 3. Proceed with the sign-in attempt
-      await signInWithEmailAndPassword(auth, email, password);      
-      // On success, navigate to the dashboard. No toast needed here.
+      await signInWithEmailAndPassword(auth, email, password);
       navigate('/dashboard');
-
     } catch (err) {
-      // On failure, show an error message
-      toast.error("Login failed. Please check your email and password.");
-      console.error("Login error:", err);
+      toast.error("Login failed. Please check your credentials.");
     } finally {
-      // 4. Always stop the loading indicator
       setLoading(false);
     }
   };
 
-    const handleGoogleSignIn = async () => {
+  const handleGoogleSignIn = async () => {
     setLoading(true);
     const provider = new GoogleAuthProvider();
+    provider.setCustomParameters({ prompt: 'select_account' });
     try {
-      await signInWithPopup(auth, provider);
+      const result = await signInWithPopup(auth, provider);
+      await createUserDocument(result.user);
       toast.success("Signed in with Google successfully!");
       navigate('/dashboard');
     } catch (error) {
       toast.error("Failed to sign in with Google.");
-      console.error("Google sign-in error:", error);
     } finally {
       setLoading(false);
     }
@@ -64,47 +68,20 @@ const Login = () => {
   return (
     <div className={styles.formContainer}>
       <h2 className={styles.title}>Log In to Your Account</h2>
-      {/* Google Sign-in Button */}
       <button onClick={handleGoogleSignIn} className={`${styles.button} ${styles.googleButton}`} disabled={loading}>
         <FcGoogle size={22} />
         <span>Continue with Google</span>
       </button>
-
-      <div className={styles.divider}>
-        <span>OR</span>
-      </div>
-      <form onSubmit={handleSubmit} className={styles.form}>
-        <input
-          type="email"
-          value={email}
-          onChange={(e) => setEmail(e.target.value)}
-          required
-          placeholder="Email Address"
-          className={styles.input}
-        />
-        <input
-          type="password"
-          value={password}
-          onChange={(e) => setPassword(e.target.value)}
-          required
-          placeholder="Password"
-          className={styles.input}
-        />
-
+      <div className={styles.divider}><span>OR</span></div>
+      <form onSubmit={handleEmailSubmit} className={styles.form}>
+        <input type="email" value={email} onChange={(e) => setEmail(e.target.value)} required placeholder="Email Address" className={styles.input} />
+        <input type="password" value={password} onChange={(e) => setPassword(e.target.value)} required placeholder="Password" className={styles.input} />
         <div className={styles.extraOptions}>
-          <label>
-            <input
-              type="checkbox"
-              checked={rememberMe}
-              onChange={(e) => setRememberMe(e.target.checked)}
-            />
-            Remember Me
-          </label>
+          <label><input type="checkbox" checked={rememberMe} onChange={(e) => setRememberMe(e.target.checked)} /> Remember Me</label>
           <Link to="/forgot-password">Forgot Password?</Link>
         </div>
-
         <button type="submit" disabled={loading} className={styles.button}>
-          {loading ? 'Logging In...' : 'Log In'}
+          {loading ? 'Logging In...' : 'Log In with Email'}
         </button>
       </form>
       <p className={styles.redirect}>
@@ -113,5 +90,4 @@ const Login = () => {
     </div>
   );
 };
-
 export default Login;

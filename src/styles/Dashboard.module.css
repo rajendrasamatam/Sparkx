@@ -1,14 +1,11 @@
-/* src/styles/Dashboard.module.css */
 .dashboard {
   display: flex;
-  background-color: var(--background-color);
 }
 
 .mainContent {
   flex-grow: 1;
   padding: 2rem 2.5rem;
-  /* Add left margin equal to sidebar width to prevent overlap */
-  margin-left: 260px; 
+  margin-left: 260px;
 }
 
 .header h1 {
@@ -24,9 +21,29 @@
 }
 
 .cardsContainer {
-  display: flex;
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
   gap: 1.5rem;
-  margin-bottom: 2rem;
+}
+
+.chartsContainer {
+  display: grid;
+  grid-template-columns: 1fr 2fr;
+  gap: 2rem;
+  margin-top: 2rem;
+}
+
+.chartCard {
+  background-color: var(--card-background);
+  padding: 1.5rem;
+  border-radius: 8px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+}
+
+@media (max-width: 1200px) {
+  .chartsContainer {
+    grid-template-columns: 1fr;
+  }
 }
 
 .mapCard {
@@ -34,13 +51,13 @@
   border-radius: 8px;
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
   margin-top: 2rem;
-  overflow: hidden; /* Important for border-radius on map */
+  overflow: hidden;
 }
 
 .mapContainer {
   height: 500px;
   width: 100%;
-  background-color: #e5e7eb; /* A nice placeholder color while tiles load */
+  background-color: #e5e7eb;
 }
 
 .leafletMap {

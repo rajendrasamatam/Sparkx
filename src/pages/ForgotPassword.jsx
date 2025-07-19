@@ -2,35 +2,53 @@ import React, { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { sendPasswordResetEmail } from 'firebase/auth';
 import { auth } from '../firebase';
+import styles from '../styles/Form.module.css';
+import toast from 'react-hot-toast';
 
 const ForgotPassword = () => {
   const [email, setEmail] = useState('');
-  const [error, setError] = useState('');
-  const [message, setMessage] = useState('');
+  const [loading, setLoading] = useState(false);
+  const [sent, setSent] = useState(false);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    setError('');
-    setMessage('');
+    setLoading(true);
     try {
       await sendPasswordResetEmail(auth, email);
-      setMessage('Check your inbox for further instructions.');
+      toast.success('Password reset email sent! Check your inbox.');
+      setSent(true);
     } catch (err) {
-      setError(err.message);
+      toast.error('Failed to send reset email. Please check the address.');
+      console.error(err);
+    } finally {
+      setLoading(false);
     }
   };
 
   return (
-    <div>
-      <h2>Forgot Password</h2>
-      {error && <p style={{ color: 'red' }}>{error}</p>}
-      {message && <p style={{ color: 'green' }}>{message}</p>}
-      <form onSubmit={handleSubmit}>
-        <input type="email" value={email} onChange={(e) => setEmail(e.target.value)} required placeholder="Email Address" />
-        <br /><br />
-        <button type="submit">Reset Password</button>
-      </form>
-      <p><Link to="/login">Back to Log In</Link></p>
+    <div className={styles.formContainer}>
+      <h2 className={styles.title}>Reset Password</h2>
+      {sent ? (
+        <p>A password reset link has been sent to your email address.</p>
+      ) : (
+        <form onSubmit={handleSubmit} className={styles.form}>
+          <p style={{marginTop: 0, color: '#6b7280'}}>Enter your email address and we'll send you a link to reset your password.</p>
+          <input
+            type="email"
+            value={email}
+            onChange={(e) => setEmail(e.target.value)}
+            required
+            placeholder="Email Address"
+            className={styles.input}
+          />
+          <button type="submit" disabled={loading} className={styles.button}>
+            {loading ? 'Sending...' : 'Send Reset Link'}
+          </button>
+        </form>
+      )}
+      <p className={styles.redirect}>
+        <Link to="/login">Back to Log In</Link>
+      </p>
     </div>
   );
 };

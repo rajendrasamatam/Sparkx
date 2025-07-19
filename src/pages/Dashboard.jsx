@@ -1,14 +1,16 @@
-// src/pages/Dashboard.jsx
-
 import React, { useState, useEffect, useRef } from 'react';
 import { useLocation } from 'react-router-dom';
 import Sidebar from '../components/Sidebar';
+import Header from '../components/Header';
 import StatCard from '../components/StatCard';
 import StatusBadge from '../components/StatusBadge';
+import StatusPieChart from '../components/StatusPieChart';
+import InstallationsBarChart from '../components/InstallationsBarChart';
 import styles from '../styles/Dashboard.module.css';
 import { db } from '../firebase';
 import { collection, onSnapshot, query, orderBy } from 'firebase/firestore';
 import { FiHardDrive, FiAlertTriangle, FiCheckCircle } from 'react-icons/fi';
+import toast from 'react-hot-toast';
 
 // --- LEAFLET & MAP CLUSTER IMPORTS ---
 import { MapContainer, TileLayer, Marker, Popup, LayersControl, LayerGroup } from 'react-leaflet';
@@ -16,14 +18,11 @@ import { divIcon, latLngBounds } from 'leaflet';
 import MarkerClusterGroup from '@changey/react-leaflet-markercluster';
 import 'leaflet/dist/leaflet.css';
 import '@changey/react-leaflet-markercluster/dist/styles.min.css';
+
 // --- HELPER COMPONENTS AND FUNCTIONS ---
 
-// 1. Custom hook to parse URL query parameters
-function useQuery() {
-  return new URLSearchParams(useLocation().search);
-}
+function useQuery() { return new URLSearchParams(useLocation().search); }
 
-// 2. Helper to fetch address from coordinates using OpenCage API
 async function getAddressFromCoords(lat, lng) {
   const apiKey = import.meta.env.VITE_OPENCAGE_API_KEY;
   if (!apiKey) return "Address service not configured.";
@@ -31,31 +30,15 @@ async function getAddressFromCoords(lat, lng) {
     const response = await fetch(`https://api.opencagedata.com/geocode/v1/json?q=${lat}+${lng}&key=${apiKey}`);
     const data = await response.json();
     return data.results?.[0]?.formatted || "Address not found.";
-  } catch (error) {
-    console.error("Reverse geocoding error:", error);
-    return "Could not fetch address.";
-  }
+  } catch (error) { console.error("Reverse geocoding error:", error); return "Could not fetch address."; }
 }
 
-// 3. A new component for the Popup content to handle the async address fetching
 function LocationPopup({ light }) {
   const [address, setAddress] = useState("Loading address...");
-  useEffect(() => {
-    getAddressFromCoords(light.location.latitude, light.location.longitude)
-      .then(setAddress);
-  }, [light.location.latitude, light.location.longitude]);
-
-  return (
-    <>
-      <strong>ID: {light.lightId}</strong><br/>
-      Status: <StatusBadge status={light.status} /><br/>
-      <hr style={{margin: '5px 0', border: '0', borderTop: '1px solid #eee'}} />
-      Address: {address}
-    </>
-  );
+  useEffect(() => { getAddressFromCoords(light.location.latitude, light.location.longitude).then(setAddress); }, [light.location.latitude, light.location.longitude]);
+  return ( <><strong>ID: {light.lightId}</strong><br/>Status: <StatusBadge status={light.status} /><br/><hr style={{margin: '5px 0', border: '0', borderTop: '1px solid #eee'}} />Address: {address}</> );
 }
 
-// 4. The advanced marker icon function
 const getMarkerIcon = (status) => {
   let iconHtml = '', color = '#6b7280';
   if (status === 'working') { color = '#10b981'; iconHtml = `<svg stroke="currentColor" fill="currentColor" stroke-width="0" viewBox="0 0 24 24" height="1em" width="1em" xmlns="http://www.w3.org/2000/svg" style="color: white; font-size: 14px;"><path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z"></path></svg>`; } 
@@ -69,86 +52,85 @@ const getMarkerIcon = (status) => {
 
 const Dashboard = () => {
   const [lights, setLights] = useState([]);
-  const [stats, setStats] = useState({});
+  const [stats, setStats] = useState({ totalLights: 0, faultLights: 0, workingLights: 0, repairingLights: 0 });
   const [loading, setLoading] = useState(true);
-  const mapRef = useRef(null); // Ref to hold the map instance
+  const mapRef = useRef(null);
+  const prevLightsRef = useRef([]);
+  const queryParams = useQuery();
 
-  // This single useEffect now handles both data fetching and map bounding.
   useEffect(() => {
     const q = query(collection(db, 'streetlights'), orderBy('installedAt', 'desc'));
     const unsubscribe = onSnapshot(q, (snapshot) => {
       const lightsData = snapshot.docs.map(doc => ({ ...doc.data(), id: doc.id }));
-      setLights(lightsData);
       
-      // Update stats
+      if (!loading) {
+        const newFaults = lightsData.filter(current => {
+          const prev = prevLightsRef.current.find(p => p.id === current.id);
+          return current.status === 'faulty' && (!prev || prev.status !== 'faulty');
+        });
+        const resolvedFaults = lightsData.filter(current => {
+          const prev = prevLightsRef.current.find(p => p.id === current.id);
+          return current.status === 'working' && prev && prev.status === 'faulty';
+        });
+
+        newFaults.forEach(faultyLight => toast.error(`New Fault Reported: ID ${faultyLight.lightId}`, { icon: '🚨' }));
+        resolvedFaults.forEach(resolvedLight => toast.success(`Fault Resolved: ID ${resolvedLight.lightId} is now working.`, { icon: '✅' }));
+      }
+      prevLightsRef.current = lightsData;
+
+      setLights(lightsData);
       setStats({
         totalLights: lightsData.length,
         faultLights: lightsData.filter(l => l.status === 'faulty').length,
-        workingLights: lightsData.filter(l => l.status === 'working').length
+        workingLights: lightsData.filter(l => l.status === 'working').length,
+        repairingLights: lightsData.filter(l => l.status === 'under repair').length
       });
       setLoading(false);
+    });
+    return () => unsubscribe();
+  }, [loading]);
 
-      // --- SIMPLIFIED MAP BOUNDING LOGIC ---
-      const map = mapRef.current;
-      if (map && lightsData.length > 0) {
-        // When data loads, fit all markers into the view.
-        const bounds = latLngBounds(lightsData.map(l => [l.location.latitude, l.location.longitude]));
+  useEffect(() => {
+    const map = mapRef.current;
+    if (!map || lights.length === 0) return;
+    const lat = queryParams.get('lat');
+    const lng = queryParams.get('lng');
+    if (lat && lng) {
+      map.flyTo([parseFloat(lat), parseFloat(lng)], 18);
+    } else {
+      const bounds = latLngBounds(lights.map(l => [l.location.latitude, l.location.longitude]));
+      if (bounds.isValid()) {
         map.fitBounds(bounds, { padding: [50, 50] });
       }
-      // ------------------------------------
-    });
-
-    return () => unsubscribe();
-  }, []); // Empty dependency array is correct.
+    }
+  }, [lights, queryParams]);
 
   return (
     <div className={styles.dashboard}>
       <Sidebar />
       <main className={styles.mainContent}>
-        <header className={styles.header}>
-          <h1>Dashboard Overview</h1>
-          <p>Real-time geographic and statistical summary of the network.</p>
-        </header>
-
+        <Header title="Dashboard" subtitle="Real-time overview of the entire streetlight network." />
         <div className={styles.cardsContainer}>
           <StatCard icon={<FiHardDrive />} title="Total Lights" count={loading ? '...' : stats.totalLights} />
           <StatCard icon={<FiAlertTriangle style={{ color: '#ef4444' }} />} title="Faulty Lights" count={loading ? '...' : stats.faultLights} />
           <StatCard icon={<FiCheckCircle style={{ color: '#10b981' }} />} title="Working Lights" count={loading ? '...' : stats.workingLights} />
         </div>
-
+        <div className={styles.chartsContainer}>
+          <div className={styles.chartCard}>{loading ? <p>Loading chart...</p> : <StatusPieChart stats={stats} />}</div>
+          <div className={styles.chartCard}>{loading ? <p>Loading chart...</p> : <InstallationsBarChart lights={lights} />}</div>
+        </div>
         <div className={styles.mapCard}>
           <div className={styles.mapContainer}>
-            {loading ? <p className={styles.loadingText}>Loading Map & Data...</p> : (
-              <MapContainer 
-                center={[20.5937, 78.9629]} // Initial center, will be overridden
-                zoom={5} 
-                className={styles.leafletMap}
-                scrollWheelZoom={true}
-                ref={mapRef}
-              >
-                {/* The ChangeView component is no longer needed */}
+            {loading ? <p className={styles.loadingText}>Loading Map...</p> : (
+              <MapContainer center={[20.5937, 78.9629]} zoom={5} className={styles.leafletMap} scrollWheelZoom={true} ref={mapRef}>
                 <LayersControl position="topright">
-                  <LayersControl.BaseLayer checked name="Street Map">
-                    <TileLayer
-                      attribution='© <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>, Geocoding by <a href="https://opencagedata.com">OpenCage</a>'
-                      url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
-                    />
-                  </LayersControl.BaseLayer>
-                  <LayersControl.BaseLayer name="Satellite View">
-                    <TileLayer
-                      attribution='© Esri, Maxar, GeoEye'
-                      url='https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}'
-                    />
-                  </LayersControl.BaseLayer>
+                  <LayersControl.BaseLayer checked name="Street Map"><TileLayer attribution='© OSM, Geocoding by OpenCage' url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png" /></LayersControl.BaseLayer>
+                  <LayersControl.BaseLayer name="Satellite View"><TileLayer attribution='© Esri, Maxar' url='https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}' /></LayersControl.BaseLayer>
                   <LayersControl.Overlay checked name="Streetlights">
                     <LayerGroup>
                       <MarkerClusterGroup>
                         {lights.map(light => (
-                          <Marker 
-                            key={light.id} 
-                            position={[light.location.latitude, light.location.longitude]}
-                            icon={getMarkerIcon(light.status)}
-                          >
+                          <Marker key={light.id} position={[light.location.latitude, light.location.longitude]} icon={getMarkerIcon(light.status)}>
                             <Popup><LocationPopup light={light} /></Popup>
                           </Marker>
                         ))}
@@ -164,5 +146,4 @@ const Dashboard = () => {
     </div>
   );
 };
-
 export default Dashboard;
