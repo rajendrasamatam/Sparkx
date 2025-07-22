@@ -10,9 +10,11 @@ import ForgotPassword from './pages/ForgotPassword';
 import Dashboard from './pages/Dashboard';
 import ManageLights from './pages/ManageLights';
 import LightDetails from './pages/LightDetails';
+import MyTasks from './pages/MyTasks';
 import ManageUsers from './pages/ManageUsers';
 import Profile from './pages/Profile';
 import NotFound from './pages/NotFound';
+import Tickets from './pages/Tickets';
 
 // Import Route Components
 import ProtectedRoute from './components/ProtectedRoute';
@@ -34,12 +36,14 @@ function App() {
             <Route path="/dashboard" element={<Dashboard />} />
             <Route path="/manage-lights" element={<ManageLights />} />
             <Route path="/light/:id" element={<LightDetails />} />
+            <Route path="/my-tasks" element={<MyTasks />} />
             <Route path="/profile" element={<Profile />} />
           </Route>
 
           {/* Protected Routes for Admins Only */}
           <Route element={<AdminRoute />}>
             <Route path="/manage-users" element={<ManageUsers />} />
+            <Route path="/tickets" element={<Tickets />} />
           </Route>
 
           {/* Catch-All 404 Route */}

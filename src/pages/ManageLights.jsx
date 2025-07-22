@@ -1,16 +1,20 @@
+// src/pages/ManageLights.jsx
+
 import React, { useState, useEffect, useMemo } from 'react';
 import { Link } from 'react-router-dom';
 import Sidebar from '../components/Sidebar';
+import Header from '../components/Header'; // <-- FIX 1: Import the Header component
 import Modal from 'react-modal';
 import { Html5QrcodeScanner } from 'html5-qrcode';
 import { db, auth } from '../firebase';
 import { collection, addDoc, onSnapshot, deleteDoc, doc, query, orderBy, updateDoc, where, getDocs, Timestamp } from 'firebase/firestore';
 import toast from 'react-hot-toast';
 import styles from '../styles/ManageLights.module.css';
-import { FiTrash2, FiEdit, FiCamera, FiXCircle, FiPlus } from 'react-icons/fi';
+import { FiTrash2, FiEdit, FiCamera, FiXCircle } from 'react-icons/fi';
 import StatusBadge from '../components/StatusBadge';
 import { useAuth } from '../context/AuthContext';
 
+// QrScannerComponent remains the same and is correct.
 function QrScannerComponent({ onScanSuccess }) {
   useEffect(() => {
     const scanner = new Html5QrcodeScanner("qr-reader-element", { qrbox: { width: 250, height: 250 }, fps: 5 }, false);
@@ -21,7 +25,6 @@ function QrScannerComponent({ onScanSuccess }) {
     scanner.render(handleSuccess, (error) => {});
     return () => { try { scanner.clear(); } catch(e) {} };
   }, [onScanSuccess]);
-
   return <div id="qr-reader-element" className={styles.scannerContainer}></div>;
 }
 
@@ -84,17 +87,50 @@ const ManageLights = () => {
     setIsEditModalOpen(true);
   };
 
+  // --- REFINED AND CORRECTED UPDATE FUNCTION ---
   const handleUpdateLight = async (e) => {
     e.preventDefault();
-    if (!currentLight) return;
+    if (!currentLight || newStatus === currentLight.status) {
+        setIsEditModalOpen(false);
+        return;
+    };
+
     setIsUpdating(true);
-    const toastId = toast.loading('Updating...');
+    const toastId = toast.loading('Updating status...');
+    const lightDocRef = doc(db, 'streetlights', currentLight.id);
+
     try {
-      await updateDoc(doc(db, 'streetlights', currentLight.id), { status: newStatus });
-      toast.success('Status updated!', { id: toastId });
-      setIsEditModalOpen(false);
-    } catch (error) { toast.error('Failed to update.', { id: toastId }); } 
-    finally { setIsUpdating(false); }
+        // Step 1: Always update the light's status.
+        await updateDoc(lightDocRef, {
+            status: newStatus
+        });
+        toast.success('Status updated successfully!', { id: toastId });
+
+        // Step 2: Check if a new ticket needs to be created.
+        if (newStatus === 'faulty' && currentLight.status !== 'faulty') {
+            const ticketsCollectionRef = collection(db, "tickets");
+            await addDoc(ticketsCollectionRef, {
+                lightId: currentLight.lightId,
+                lightDocId: currentLight.id,
+                status: 'Open',
+                createdAt: Timestamp.now(),
+                location: currentLight.location,
+                assignedTo_uid: null,
+                assignedTo_name: null,
+                resolvedAt: null,
+            });
+            toast.success(`New ticket created for ${currentLight.lightId}.`);
+        }
+
+        setIsEditModalOpen(false);
+        setCurrentLight(null);
+
+    } catch (error) {
+        toast.error('Failed to update status. Check permissions.', { id: toastId });
+        console.error("Update error:", error);
+    } finally {
+        setIsUpdating(false);
+    }
   };
 
   const handleDeleteLight = async (id) => {
@@ -113,7 +149,12 @@ const ManageLights = () => {
     <div className={styles.pageContainer}>
       <Sidebar />
       <main className={styles.mainContent}>
-        <header title="Manage Streetlights" subtitle="Scan, search, and manage all lights in the network." />
+        {/* FIX 2: Use the actual Header component */}
+        <Header 
+          title="Manage Streetlights" 
+          subtitle="Scan, search, and manage all lights in the network." 
+        />
+        
         {(isLineman || isAdmin) &&
           <div className={styles.card}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
@@ -131,6 +172,7 @@ const ManageLights = () => {
             )}
           </div>
         }
+
         {currentLight && (
           <Modal isOpen={isEditModalOpen} onRequestClose={() => setIsEditModalOpen(false)} className={styles.modal} overlayClassName={styles.overlay}>
             <button onClick={() => setIsEditModalOpen(false)} className={styles.closeButton}>×</button>
@@ -142,6 +184,7 @@ const ManageLights = () => {
             </form>
           </Modal>
         )}
+
         <div className={styles.dataCard}>
           <div className={styles.cardHeader}>
             <h2 className={styles.cardTitle}>Registered Lights ({filteredLights.length})</h2>

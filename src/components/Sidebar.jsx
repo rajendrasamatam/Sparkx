@@ -4,7 +4,7 @@ import { useAuth } from '../context/AuthContext';
 import { signOut } from 'firebase/auth';
 import { auth } from '../firebase';
 import styles from '../styles/Sidebar.module.css';
-import { FiLogOut, FiUser, FiZap, FiGrid, FiCpu, FiUsers } from 'react-icons/fi';
+import { FiLogOut, FiUser, FiZap, FiGrid, FiCpu, FiUsers,FiTag, FiClipboard } from 'react-icons/fi';
 import toast from 'react-hot-toast';
 
 const Sidebar = () => {
@@ -46,6 +46,10 @@ const Sidebar = () => {
           <FiGrid />
           <span>Dashboard</span>
         </NavLink>
+        <NavLink to="/my-tasks" className={({isActive}) => isActive ? `${styles.navLink} ${styles.activeLink}` : styles.navLink}>
+          <FiClipboard />
+          <span>My Tasks</span>
+        </NavLink>
         <NavLink to="/manage-lights" className={({isActive}) => isActive ? `${styles.navLink} ${styles.activeLink}` : styles.navLink}>
           <FiCpu />
           <span>Manage Lights</span>
@@ -55,10 +59,16 @@ const Sidebar = () => {
           <span>My Profile</span>
         </NavLink>
         {isAdmin && (
+          <>
           <NavLink to="/manage-users" className={({isActive}) => isActive ? `${styles.navLink} ${styles.activeLink}` : styles.navLink}>
             <FiUsers />
             <span>Manage Users</span>
           </NavLink>
+          <NavLink to="/tickets" className={({isActive}) => isActive ? `${styles.navLink} ${styles.activeLink}` : styles.navLink}>
+            <FiTag />
+            <span>All Tickets</span>
+          </NavLink>
+          </>
         )}
       </nav>
 
