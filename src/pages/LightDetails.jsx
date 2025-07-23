@@ -3,11 +3,11 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import Sidebar from '../components/Sidebar';
-import Header from '../components/Header'; // <-- Import Header
+import Header from '../components/Header';
 import StatusBadge from '../components/StatusBadge';
 import { db, auth } from '../firebase';
 import { doc, getDoc, collection, addDoc, query, orderBy, onSnapshot, Timestamp } from 'firebase/firestore';
-import styles from '../styles/ManageLights.module.css'; // Use the better ManageLights styles
+import styles from '../styles/LightDetails.module.css'; // <-- FIX: Import the new, dedicated stylesheet
 import toast from 'react-hot-toast';
 
 // --- LEAFLET MAP IMPORTS ---
@@ -15,7 +15,7 @@ import { MapContainer, TileLayer, Marker, Popup } from 'react-leaflet';
 import { divIcon } from 'leaflet';
 import 'leaflet/dist/leaflet.css';
 
-// Reusable getMarkerIcon function
+// Reusable getMarkerIcon function (no changes)
 const getMarkerIcon = (status) => {
   let color = '#6b7280';
   if (status === 'working') { color = '#10b981'; } 
@@ -26,7 +26,6 @@ const getMarkerIcon = (status) => {
 };
 
 
-// The component now accepts setIsSidebarOpen
 const LightDetails = ({ setIsSidebarOpen }) => {
   const { id } = useParams();
   const [light, setLight] = useState(null);
@@ -35,6 +34,7 @@ const LightDetails = ({ setIsSidebarOpen }) => {
   const [loading, setLoading] = useState(true);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
+  // All logic functions remain the same
   useEffect(() => {
     const docRef = doc(db, "streetlights", id);
     const unsubscribe = onSnapshot(docRef, (docSnap) => {
@@ -63,9 +63,8 @@ const LightDetails = ({ setIsSidebarOpen }) => {
     e.preventDefault();
     if (!newLogEntry.trim()) return;
     setIsSubmitting(true);
-    const logCollectionRef = collection(db, "streetlights", id, "log");
     try {
-      await addDoc(logCollectionRef, {
+      await addDoc(collection(db, "streetlights", id, "log"), {
         text: newLogEntry,
         author: auth.currentUser.displayName || auth.currentUser.email,
         createdAt: Timestamp.now(),
@@ -86,7 +85,6 @@ const LightDetails = ({ setIsSidebarOpen }) => {
       <div className={styles.pageContainer}>
         <Sidebar />
         <main className={styles.mainContent}>
-          {/* Also pass the prop to the header in the loading state */}
           <Header title="Loading..." subtitle="Fetching light details..." setIsSidebarOpen={setIsSidebarOpen} />
           <p>Please wait...</p>
         </main>
@@ -110,61 +108,65 @@ const LightDetails = ({ setIsSidebarOpen }) => {
     <div className={styles.pageContainer}>
       <Sidebar />
       <main className={styles.mainContent}>
-        {/* Replace the old header with the Header component */}
         <Header 
             title={`Light ID: ${light.lightId}`} 
             subtitle="Detailed information and maintenance history." 
             setIsSidebarOpen={setIsSidebarOpen}
         />
-        <div className={styles.detailsGrid}> {/* Use the class for responsive grid */}
-          <div>
-            <div className={styles.dataCard}>
+        <div className={styles.detailsGrid}>
+          <div className={styles.leftColumn}>
+            <div className={styles.card}>
               <h2 className={styles.cardTitle}>Details</h2>
-              <p><strong>Status:</strong> <StatusBadge status={light.status} /></p>
-              <p><strong>Installed On:</strong> {formatDate(light.installedAt)}</p>
-              <p><strong>Coordinates:</strong> {`${light.location.latitude.toFixed(5)}, ${light.location.longitude.toFixed(5)}`}</p>
+              <dl className={styles.detailsList}>
+                <dt>Status</dt>
+                <dd><StatusBadge status={light.status} /></dd>
+                <dt>Installed On</dt>
+                <dd>{formatDate(light.installedAt)}</dd>
+                <dt>Coordinates</dt>
+                <dd>{`${light.location.latitude.toFixed(5)}, ${light.location.longitude.toFixed(5)}`}</dd>
+              </dl>
             </div>
 
-            <div className={styles.dataCard}>
+            <div className={styles.card}>
               <h2 className={styles.cardTitle}>Maintenance Log</h2>
-              <form onSubmit={handleAddLog} style={{ marginBottom: '1.5rem' }}>
+              <form onSubmit={handleAddLog} className={styles.logForm}>
                 <textarea 
                   value={newLogEntry}
                   onChange={(e) => setNewLogEntry(e.target.value)}
-                  placeholder="Add a new log entry..."
-                  className={styles.input}
+                  placeholder="Add a new log entry... e.g., 'Replaced faulty bulb.'"
+                  className={styles.logTextarea}
                   rows="3"
-                  style={{ width: '100%', marginBottom: '1rem' }}
                 ></textarea>
                 <button type="submit" disabled={isSubmitting} className={styles.primaryButton}>
                   {isSubmitting ? 'Adding...' : 'Add Log'}
                 </button>
               </form>
-              <div>
+              <div className={styles.logList}>
                 {log.length > 0 ? (
                   log.map(entry => (
-                    <div key={entry.id} style={{ borderBottom: '1px solid #eee', padding: '1rem 0' }}>
-                      <p style={{ margin: 0 }}>{entry.text}</p>
-                      <small style={{ color: '#6b7280' }}>
+                    <div key={entry.id} className={styles.logEntry}>
+                      <p className={styles.logText}>{entry.text}</p>
+                      <p className={styles.logMeta}>
                         by <strong>{entry.author}</strong> on {formatDate(entry.createdAt)}
-                      </small>
+                      </p>
                     </div>
                   ))
                 ) : (
-                  <p className={styles.emptyState} style={{padding: '1rem 0'}}>No log entries yet.</p>
+                  <p className={styles.emptyState}>No log entries yet.</p>
                 )}
               </div>
             </div>
           </div>
 
-          <div style={{ position: 'sticky', top: '2rem' }}>
-            <div className={styles.dataCard}>
-              <div style={{height: '300px', borderRadius: '8px', overflow: 'hidden'}}>
+          <div className={styles.rightColumn}>
+            <div className={styles.card}>
+              <h2 className={styles.cardTitle}>Location</h2>
+              <div className={styles.mapWrapper}>
                 <MapContainer 
                   center={[light.location.latitude, light.location.longitude]} 
                   zoom={16} 
                   style={{height: '100%', width: '100%'}}
-                  scrollWheelZoom={false}
+                  scrollWheelZoom={true} // <-- FIX: Scroll wheel zoom is now enabled
                 >
                   <TileLayer url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png" />
                   <Marker 

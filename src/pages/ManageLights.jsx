@@ -220,6 +220,33 @@ const ManageLights = ({ setIsSidebarOpen }) => {
                   </tbody>
               </table>
             </div>
+            <div className={styles.mobileCardList}>
+                        {loading ? <p className={styles.emptyState}>Loading...</p> :
+                         currentItems.length === 0 ? <p className={styles.emptyState}>No lights match the current filter.</p> :
+                         (currentItems.map(light => (
+                            <div key={light.id} className={styles.mobileCard}>
+                                <div className={styles.mobileCardHeader}>
+                                    <div className={styles.mobileCardTitle}>
+                                        <Link to={`/light/${light.id}`} className={styles.idLink}>
+                                            {light.lightId}
+                                        </Link>
+                                    </div>
+                                    <div className={styles.mobileCardActions}>
+                                        {(isLineman || isAdmin) && <button onClick={() => handleEditClick(light)} className={`${styles.actionButton} ${styles.edit}`} title="Edit"><FiEdit /></button>}
+                                        {isAdmin && <button onClick={() => handleDeleteLight(light.id)} className={`${styles.actionButton} ${styles.delete}`} title="Delete"><FiTrash2 /></button>}
+                                    </div>
+                                </div>
+                                <dl className={styles.mobileCardContent}>
+                                    <dt>Status:</dt>
+                                    <dd><StatusBadge status={light.status} /></dd>
+                                    <dt>Location:</dt>
+                                    <dd>{`${light.location.latitude.toFixed(4)}, ${light.location.longitude.toFixed(4)}`}</dd>
+                                    <dt>Installed:</dt>
+                                    <dd>{formatDate(light.installedAt)}</dd>
+                                </dl>
+                            </div>
+                         )))}
+                    </div>
             {totalPages > 1 && ( <div className={styles.paginationContainer}><span>Page {currentPage} of {totalPages}</span><div><button onClick={() => paginate(currentPage - 1)} disabled={currentPage === 1}>Previous</button><button onClick={() => paginate(currentPage + 1)} disabled={currentPage === totalPages} style={{marginLeft: '0.5rem'}}>Next</button></div></div> )}
         </div>
       </main>

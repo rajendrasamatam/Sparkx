@@ -125,6 +125,32 @@ const Tickets = ({ setIsSidebarOpen }) => {
               </tbody>
             </table>
           </div>
+          <div className={styles.mobileCardList}>
+                        {loading ? <p className={styles.emptyState}>Loading tickets...</p> :
+                         filteredTickets.length === 0 ? <p className={styles.emptyState}>No {filter.toLowerCase()} tickets found.</p> :
+                         (filteredTickets.map(ticket => (
+                            <div key={ticket.id} className={styles.mobileCard}>
+                                <div className={styles.mobileCardHeader}>
+                                    <div className={styles.mobileCardTitle}>
+                                        <Link to={`/light/${ticket.lightDocId}`} className={styles.idLink}>{ticket.lightId}</Link>
+                                    </div>
+                                </div>
+                                <dl className={styles.mobileCardContent}>
+                                    <dt>Status:</dt>
+                                    <dd>{ticket.status}</dd>
+                                    <dt>Created:</dt>
+                                    <dd>{formatDate(ticket.createdAt)}</dd>
+                                    <dt>Assigned To:</dt>
+                                    <dd>{ticket.assignedTo_name || 'Unassigned'}</dd>
+                                </dl>
+                                {ticket.status === 'Open' && (
+                                    <div style={{marginTop: '1rem'}}>
+                                        <button className={styles.primaryButton} onClick={() => handleAssignClick(ticket)}>Assign</button>
+                                    </div>
+                                )}
+                            </div>
+                         )))}
+                    </div>
         </div>
 
         {/* --- Assign Ticket Modal --- */}

@@ -97,6 +97,27 @@ const ManageUsers = ({ setIsSidebarOpen }) => {
               </tbody>
             </table>
           </div>
+          <div className={styles.mobileCardList}>
+                        {loading ? <p className={styles.emptyState}>Loading users...</p> :
+                         filteredUsers.length === 0 ? <p className={styles.emptyState}>No users found.</p> :
+                         (filteredUsers.map(user => (
+                            <div key={user.id} className={styles.mobileCard}>
+                                <div className={styles.mobileCardHeader}>
+                                    <div className={styles.mobileCardTitle}>{user.displayName || 'N/A'}</div>
+                                </div>
+                                <dl className={styles.mobileCardContent}>
+                                    <dt>Email:</dt>
+                                    <dd>{user.email}</dd>
+                                    <dt>Role:</dt>
+                                    <dd style={{ textTransform: 'capitalize' }}>{user.role}</dd>
+                                </dl>
+                                <div style={{marginTop: '1rem'}}>
+                                    {user.role === 'lineman' && <button className={styles.primaryButton} onClick={() => handleRoleChange(user.id, 'admin')}>Promote to Admin</button>}
+                                    {user.role === 'admin' && <button className={styles.primaryButton} onClick={() => handleRoleChange(user.id, 'lineman')} style={{ backgroundColor: '#6b7280' }}>Demote to Lineman</button>}
+                                </div>
+                            </div>
+                         )))}
+                    </div>
         </div>
       </main>
     </div>
