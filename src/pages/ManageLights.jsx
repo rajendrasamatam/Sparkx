@@ -3,11 +3,12 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { Link } from 'react-router-dom';
 import Sidebar from '../components/Sidebar';
-import Header from '../components/Header'; // <-- FIX 1: Import the Header component
+import Header from '../components/Header';
 import Modal from 'react-modal';
 import { Html5QrcodeScanner } from 'html5-qrcode';
 import { db, auth } from '../firebase';
-import { collection, addDoc, onSnapshot, deleteDoc, doc, query, orderBy, updateDoc, where, getDocs, Timestamp } from 'firebase/firestore';
+// --- FIX 1: Import GeoPoint ---
+import { collection, addDoc, onSnapshot, deleteDoc, doc, query, orderBy, updateDoc, where, getDocs, Timestamp, GeoPoint } from 'firebase/firestore';
 import toast from 'react-hot-toast';
 import styles from '../styles/ManageLights.module.css';
 import { FiTrash2, FiEdit, FiCamera, FiXCircle } from 'react-icons/fi';
@@ -63,17 +64,30 @@ const ManageLights = ({ setIsSidebarOpen }) => {
   const totalPages = Math.ceil(filteredLights.length / itemsPerPage);
   const paginate = (pageNumber) => setCurrentPage(pageNumber);
 
+  // --- THIS IS THE CORRECTED FUNCTION ---
   const onScanSuccess = async (lightId) => {
     setShowScanner(false);
     const toastId = toast.loading(`Processing ID: ${lightId}...`);
     try {
       const q = query(lightsCollectionRef, where("lightId", "==", lightId));
       if (!(await getDocs(q)).empty) return toast.error(`Error: Light ID ${lightId} is already registered.`, { id: toastId });
+      
       toast.loading('Getting GPS location...', { id: toastId });
       navigator.geolocation.getCurrentPosition(
         async (pos) => {
           const { latitude, longitude } = pos.coords;
-          await addDoc(lightsCollectionRef, { lightId, location: { latitude, longitude }, status: 'working', installedAt: Timestamp.now(), registeredBy: auth.currentUser.displayName || auth.currentUser.email });
+          
+          // FIX 2: Create a Firestore GeoPoint from the coordinates
+          const locationGeoPoint = new GeoPoint(latitude, longitude);
+          
+          await addDoc(lightsCollectionRef, { 
+            lightId, 
+            location: locationGeoPoint, // <-- Use the GeoPoint object here
+            status: 'working', 
+            installedAt: Timestamp.now(), 
+            registeredBy: auth.currentUser.displayName || auth.currentUser.email 
+          });
+          
           toast.success(`Success! Light ${lightId} registered.`, { id: toastId });
         },
         () => toast.error('Could not get location. Enable GPS.', { id: toastId }), { enableHighAccuracy: true }
@@ -87,7 +101,6 @@ const ManageLights = ({ setIsSidebarOpen }) => {
     setIsEditModalOpen(true);
   };
 
-  // --- REFINED AND CORRECTED UPDATE FUNCTION ---
   const handleUpdateLight = async (e) => {
     e.preventDefault();
     if (!currentLight || newStatus === currentLight.status) {
@@ -100,13 +113,9 @@ const ManageLights = ({ setIsSidebarOpen }) => {
     const lightDocRef = doc(db, 'streetlights', currentLight.id);
 
     try {
-        // Step 1: Always update the light's status.
-        await updateDoc(lightDocRef, {
-            status: newStatus
-        });
+        await updateDoc(lightDocRef, { status: newStatus });
         toast.success('Status updated successfully!', { id: toastId });
 
-        // Step 2: Check if a new ticket needs to be created.
         if (newStatus === 'faulty' && currentLight.status !== 'faulty') {
             const ticketsCollectionRef = collection(db, "tickets");
             await addDoc(ticketsCollectionRef, {
@@ -149,7 +158,6 @@ const ManageLights = ({ setIsSidebarOpen }) => {
     <div className={styles.pageContainer}>
       <Sidebar />
       <main className={styles.mainContent}>
-        {/* FIX 2: Use the actual Header component */}
         <Header 
           title="Manage Streetlights" 
           subtitle="Scan, search, and manage all lights in the network."
@@ -220,33 +228,30 @@ const ManageLights = ({ setIsSidebarOpen }) => {
                   </tbody>
               </table>
             </div>
+            
             <div className={styles.mobileCardList}>
-                        {loading ? <p className={styles.emptyState}>Loading...</p> :
-                         currentItems.length === 0 ? <p className={styles.emptyState}>No lights match the current filter.</p> :
-                         (currentItems.map(light => (
-                            <div key={light.id} className={styles.mobileCard}>
-                                <div className={styles.mobileCardHeader}>
-                                    <div className={styles.mobileCardTitle}>
-                                        <Link to={`/light/${light.id}`} className={styles.idLink}>
-                                            {light.lightId}
-                                        </Link>
-                                    </div>
-                                    <div className={styles.mobileCardActions}>
-                                        {(isLineman || isAdmin) && <button onClick={() => handleEditClick(light)} className={`${styles.actionButton} ${styles.edit}`} title="Edit"><FiEdit /></button>}
-                                        {isAdmin && <button onClick={() => handleDeleteLight(light.id)} className={`${styles.actionButton} ${styles.delete}`} title="Delete"><FiTrash2 /></button>}
-                                    </div>
-                                </div>
-                                <dl className={styles.mobileCardContent}>
-                                    <dt>Status:</dt>
-                                    <dd><StatusBadge status={light.status} /></dd>
-                                    <dt>Location:</dt>
-                                    <dd>{`${light.location.latitude.toFixed(4)}, ${light.location.longitude.toFixed(4)}`}</dd>
-                                    <dt>Installed:</dt>
-                                    <dd>{formatDate(light.installedAt)}</dd>
-                                </dl>
+                {loading ? <p className={styles.emptyState}>Loading...</p> :
+                  currentItems.length === 0 ? <p className={styles.emptyState}>No lights match the current filter.</p> :
+                  (currentItems.map(light => (
+                    <div key={light.id} className={styles.mobileCard}>
+                        <div className={styles.mobileCardHeader}>
+                            <div className={styles.mobileCardTitle}>
+                                <Link to={`/light/${light.id}`} className={styles.idLink}>{light.lightId}</Link>
                             </div>
-                         )))}
+                            <div className={styles.mobileCardActions}>
+                                {(isLineman || isAdmin) && <button onClick={() => handleEditClick(light)} className={`${styles.actionButton} ${styles.edit}`} title="Edit"><FiEdit /></button>}
+                                {isAdmin && <button onClick={() => handleDeleteLight(light.id)} className={`${styles.actionButton} ${styles.delete}`} title="Delete"><FiTrash2 /></button>}
+                            </div>
+                        </div>
+                        <dl className={styles.mobileCardContent}>
+                            <dt>Status:</dt><dd><StatusBadge status={light.status} /></dd>
+                            <dt>Location:</dt><dd>{`${light.location.latitude.toFixed(4)}, ${light.location.longitude.toFixed(4)}`}</dd>
+                            <dt>Installed:</dt><dd>{formatDate(light.installedAt)}</dd>
+                        </dl>
                     </div>
+                  )))}
+            </div>
+
             {totalPages > 1 && ( <div className={styles.paginationContainer}><span>Page {currentPage} of {totalPages}</span><div><button onClick={() => paginate(currentPage - 1)} disabled={currentPage === 1}>Previous</button><button onClick={() => paginate(currentPage + 1)} disabled={currentPage === totalPages} style={{marginLeft: '0.5rem'}}>Next</button></div></div> )}
         </div>
       </main>
