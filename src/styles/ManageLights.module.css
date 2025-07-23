@@ -9,25 +9,6 @@
   margin-left: 260px;
 }
 
-.pageHeader {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  margin-bottom: 2rem;
-}
-
-.pageTitle {
-  margin: 0;
-  font-size: 2rem;
-  font-weight: 700;
-}
-
-.pageSubtitle {
-  margin: 0.25rem 0 0 0;
-  font-size: 1rem;
-  color: #6b7280;
-}
-
 .primaryButton {
   background-color: var(--primary-color);
   color: white;
@@ -42,16 +23,15 @@
   align-items: center;
   gap: 0.5rem;
 }
-
-.primaryButton:hover {
-  background-color: var(--primary-hover);
-}
+.primaryButton:hover { background-color: var(--primary-hover); }
+.primaryButton:disabled { background-color: #9ca3af; cursor: not-allowed; }
 
 .dataCard {
   background-color: var(--card-background);
   border-radius: 8px;
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
   overflow: hidden;
+  margin-bottom: 2rem;
 }
 
 .cardHeader {
@@ -82,12 +62,6 @@
   border: 1px solid var(--border-color);
   border-radius: 6px;
   width: 250px;
-  transition: border-color 0.2s, box-shadow 0.2s;
-}
-.searchInput:focus {
-  outline: none;
-  border-color: var(--primary-color);
-  box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.2);
 }
 
 .filterGroup button {
@@ -96,14 +70,11 @@
   border: 1px solid var(--border-color);
   background-color: transparent;
   cursor: pointer;
-  transition: background-color 0.2s, color 0.2s;
   color: #6b7280;
 }
-
 .filterGroup button:first-child { border-radius: 6px 0 0 6px; }
 .filterGroup button:not(:first-child) { border-left: none; }
 .filterGroup button:last-child { border-radius: 0 6px 6px 0; }
-
 .filterGroup button.active {
   background-color: var(--primary-color);
   color: white;
@@ -117,31 +88,20 @@
 }
 
 .scannerContainer {
-  position: relative;
-  width: 100%;
   max-width: 350px;
   margin: 1rem auto 0;
   border-radius: 8px;
   overflow: hidden;
 }
 
-.tableContainer {
-  overflow-x: auto;
-}
-
-.lightsTable {
-  width: 100%;
-  border-collapse: collapse;
-}
-
-.lightsTable th,
-.lightsTable td {
+.tableContainer { overflow-x: auto; }
+.lightsTable { width: 100%; border-collapse: collapse; }
+.lightsTable th, .lightsTable td {
   padding: 1rem 1.5rem;
   text-align: left;
   border-bottom: 1px solid var(--border-color);
   white-space: nowrap;
 }
-
 .lightsTable thead th {
   background-color: #f9fafb;
   color: #6b7280;
@@ -149,19 +109,10 @@
   font-weight: 600;
   text-transform: uppercase;
 }
+.lightsTable tbody tr:last-child td { border-bottom: none; }
+.lightsTable tbody tr:hover { background-color: #f9fafb; }
 
-.lightsTable tbody tr:last-child td {
-  border-bottom: none;
-}
-
-.lightsTable tbody tr:hover {
-  background-color: #f9fafb;
-}
-
-.actionsCell {
-  text-align: right;
-}
-
+.actionsCell { text-align: right; }
 .actionButton {
   background: transparent;
   border: none;
@@ -169,26 +120,14 @@
   padding: 0.5rem;
   font-size: 1.125rem;
   color: #6b7280;
-  transition: color 0.2s;
 }
-
 .actionButton.edit:hover { color: var(--primary-color); }
 .actionButton.delete:hover { color: #ef4444; }
 
-.idLink {
-  font-weight: bold;
-  color: var(--primary-color);
-  text-decoration: none;
-}
-.idLink:hover {
-  text-decoration: underline;
-}
+.idLink { font-weight: bold; color: var(--primary-color); text-decoration: none; }
+.idLink:hover { text-decoration: underline; }
 
-.emptyState {
-  text-align: center;
-  padding: 3rem;
-  color: #9ca3af;
-}
+.emptyState { text-align: center; padding: 3rem; color: #9ca3af; }
 
 .paginationContainer {
   padding: 1rem 1.5rem;
@@ -199,7 +138,6 @@
   font-size: 0.875rem;
   color: #6b7280;
 }
-
 .paginationContainer button {
   background-color: white;
   border: 1px solid var(--border-color);
@@ -207,11 +145,7 @@
   border-radius: 6px;
   cursor: pointer;
 }
-
-.paginationContainer button:disabled {
-  opacity: 0.5;
-  cursor: not-allowed;
-}
+.paginationContainer button:disabled { opacity: 0.5; cursor: not-allowed; }
 
 .modal {
   background: white;
@@ -221,6 +155,12 @@
   border-radius: 8px;
   position: relative;
   outline: none;
+}
+.detailsGrid {
+  display: grid;
+  grid-template-columns: 2fr 1fr;
+  gap: 2rem;
+  align-items: flex-start;
 }
 
 .overlay {
@@ -237,42 +177,38 @@
   backdrop-filter: blur(4px);
 }
 
-.modalTitle {
-  font-size: 1.5rem;
-  font-weight: 600;
-  margin: 0 0 1.5rem 0;
-  text-align: center;
-}
+.modalTitle { font-size: 1.5rem; font-weight: 600; margin: 0 0 1.5rem 0; text-align: center; }
+.closeButton { position: absolute; top: 1rem; right: 1rem; font-size: 1.5rem; color: #9ca3af; background: none; border: none; cursor: pointer; }
+.formGroup { margin-bottom: 1.5rem; }
+.formGroup label { display: block; font-weight: 500; margin-bottom: 0.5rem; }
+.input { width: 100%; padding: 0.75rem 1rem; font-size: 1rem; border: 1px solid var(--border-color); border-radius: 6px; }
+.input:disabled { background-color: #f3f4f6; }
 
-.closeButton {
-  position: absolute;
-  top: 1rem;
-  right: 1rem;
-  font-size: 1.5rem;
-  color: #9ca3af;
-  background: none;
-  border: none;
-  cursor: pointer;
-}
-
-.formGroup {
-  margin-bottom: 1.5rem;
-}
-
-.formGroup label {
-  display: block;
-  font-weight: 500;
-  margin-bottom: 0.5rem;
-}
-
-.input {
-  width: 100%;
-  padding: 0.75rem 1rem;
-  font-size: 1rem;
-  border: 1px solid var(--border-color);
-  border-radius: 6px;
-}
-
-.input:disabled {
-  background-color: #f3f4f6;
+@media (max-width: 1024px) {
+  .mainContent {
+    margin-left: 0;
+    padding: 1.5rem;
+  }
+  .detailsGrid {
+    grid-template-columns: 1fr;
+  }
+  .pageHeader {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 1rem;
+  }
+  .searchAndFilter {
+    flex-direction: column;
+    align-items: stretch;
+    width: 100%;
+  }
+  .searchInput {
+    width: 100%;
+  }
+  .filterGroup {
+    display: flex;
+  }
+  .filterGroup button {
+    flex-grow: 1;
+  }
 }

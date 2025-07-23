@@ -6,7 +6,7 @@ import { collection, query, orderBy, onSnapshot, doc, updateDoc } from 'firebase
 import toast from 'react-hot-toast';
 import styles from '../styles/ManageLights.module.css';
 
-const ManageUsers = () => {
+const ManageUsers = ({ setIsSidebarOpen }) => {
   const [users, setUsers] = useState([]);
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
@@ -47,7 +47,7 @@ const ManageUsers = () => {
     <div className={styles.pageContainer}>
       <Sidebar />
       <main className={styles.mainContent}>
-        <Header title="Manage Users" subtitle="View all registered users and manage their roles." />
+        <Header title="Manage Users" subtitle="View all registered users and manage their roles." setIsSidebarOpen={setIsSidebarOpen} />
         <div className={styles.dataCard}>
           <div className={styles.cardHeader}>
             <h2 className={styles.cardTitle}>All Users ({filteredUsers.length})</h2>

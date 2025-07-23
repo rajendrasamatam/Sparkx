@@ -11,7 +11,7 @@ import { useAuth } from '../context/AuthContext';
 import { Link } from 'react-router-dom';
 import { FiCheckCircle } from 'react-icons/fi';
 
-const MyTasks = () => {
+const MyTasks = ({ setIsSidebarOpen }) => {
   const { currentUser } = useAuth();
   const [tasks, setTasks] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -78,7 +78,7 @@ const MyTasks = () => {
     <div className={styles.pageContainer}>
       <Sidebar />
       <main className={styles.mainContent}>
-        <Header title="My Assigned Tasks" subtitle="View and resolve maintenance tickets assigned to you." />
+        <Header title="My Assigned Tasks" subtitle="View and resolve maintenance tickets assigned to you." setIsSidebarOpen={setIsSidebarOpen} />
 
         <div className={styles.dataCard}>
           <div className={styles.cardHeader}>

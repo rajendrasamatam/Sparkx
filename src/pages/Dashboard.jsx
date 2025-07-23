@@ -50,7 +50,7 @@ const getMarkerIcon = (status) => {
 };
 
 
-const Dashboard = () => {
+const Dashboard = ({ setIsSidebarOpen }) => {
   const [lights, setLights] = useState([]);
   const [stats, setStats] = useState({ totalLights: 0, faultLights: 0, workingLights: 0, repairingLights: 0 });
   const [loading, setLoading] = useState(true);
@@ -109,7 +109,7 @@ const Dashboard = () => {
     <div className={styles.dashboard}>
       <Sidebar />
       <main className={styles.mainContent}>
-        <Header title="Dashboard" subtitle="Real-time overview of the entire streetlight network." />
+        <Header title="Dashboard" subtitle="Real-time overview of the entire streetlight network." setIsSidebarOpen={setIsSidebarOpen} />
         <div className={styles.cardsContainer}>
           <StatCard icon={<FiHardDrive />} title="Total Lights" count={loading ? '...' : stats.totalLights} />
           <StatCard icon={<FiAlertTriangle style={{ color: '#ef4444' }} />} title="Faulty Lights" count={loading ? '...' : stats.faultLights} />

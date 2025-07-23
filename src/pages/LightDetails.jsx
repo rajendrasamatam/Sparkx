@@ -1,6 +1,9 @@
+// src/pages/LightDetails.jsx
+
 import React, { useState, useEffect } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import Sidebar from '../components/Sidebar';
+import Header from '../components/Header'; // <-- Import Header
 import StatusBadge from '../components/StatusBadge';
 import { db, auth } from '../firebase';
 import { doc, getDoc, collection, addDoc, query, orderBy, onSnapshot, Timestamp } from 'firebase/firestore';
@@ -23,7 +26,8 @@ const getMarkerIcon = (status) => {
 };
 
 
-const LightDetails = () => {
+// The component now accepts setIsSidebarOpen
+const LightDetails = ({ setIsSidebarOpen }) => {
   const { id } = useParams();
   const [light, setLight] = useState(null);
   const [log, setLog] = useState([]);
@@ -78,32 +82,47 @@ const LightDetails = () => {
   const formatDate = (timestamp) => timestamp?.toDate().toLocaleString() || 'N/A';
 
   if (loading) {
-    return <div className={styles.pageContainer}><Sidebar /><main className={styles.mainContent}><p>Loading light details...</p></main></div>;
+    return (
+      <div className={styles.pageContainer}>
+        <Sidebar />
+        <main className={styles.mainContent}>
+          {/* Also pass the prop to the header in the loading state */}
+          <Header title="Loading..." subtitle="Fetching light details..." setIsSidebarOpen={setIsSidebarOpen} />
+          <p>Please wait...</p>
+        </main>
+      </div>
+    );
   }
 
   if (!light) {
-    return <div className={styles.pageContainer}><Sidebar /><main className={styles.mainContent}><h1>Light Not Found</h1></main></div>;
+    return (
+      <div className={styles.pageContainer}>
+        <Sidebar />
+        <main className={styles.mainContent}>
+          <Header title="Error" subtitle="Light not found" setIsSidebarOpen={setIsSidebarOpen} />
+          <p>The requested streetlight could not be found in the database.</p>
+        </main>
+      </div>
+    );
   }
 
   return (
     <div className={styles.pageContainer}>
       <Sidebar />
       <main className={styles.mainContent}>
-        <header className={styles.pageHeader}>
-          <div>
-            <h1 className={styles.pageTitle}>Light ID: {light.lightId}</h1>
-            <p className={styles.pageSubtitle}>Detailed information and maintenance history.</p>
-          </div>
-          <Link to="/manage-lights" className={styles.primaryButton}>Back to List</Link>
-        </header>
-
-        <div style={{ display: 'grid', gridTemplateColumns: '2fr 1fr', gap: '2rem', alignItems: 'flex-start' }}>
+        {/* Replace the old header with the Header component */}
+        <Header 
+            title={`Light ID: ${light.lightId}`} 
+            subtitle="Detailed information and maintenance history." 
+            setIsSidebarOpen={setIsSidebarOpen}
+        />
+        <div className={styles.detailsGrid}> {/* Use the class for responsive grid */}
           <div>
             <div className={styles.dataCard}>
               <h2 className={styles.cardTitle}>Details</h2>
               <p><strong>Status:</strong> <StatusBadge status={light.status} /></p>
               <p><strong>Installed On:</strong> {formatDate(light.installedAt)}</p>
-              <p><strong>Coordinates:</strong> {`${light.location.latitude}, ${light.location.longitude}`}</p>
+              <p><strong>Coordinates:</strong> {`${light.location.latitude.toFixed(5)}, ${light.location.longitude.toFixed(5)}`}</p>
             </div>
 
             <div className={styles.dataCard}>

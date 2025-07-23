@@ -11,7 +11,7 @@ import styles from '../styles/ManageLights.module.css'; // Reuse styles
 import { useAuth } from '../context/AuthContext';
 import { Link } from 'react-router-dom';
 
-const Tickets = () => {
+const Tickets = ({ setIsSidebarOpen }) => {
   const [tickets, setTickets] = useState([]);
   const [linemen, setLinemen] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -82,7 +82,7 @@ const Tickets = () => {
     <div className={styles.pageContainer}>
       <Sidebar />
       <main className={styles.mainContent}>
-        <Header title="Maintenance Tickets" subtitle="Assign and track all reported faults." />
+        <Header title="Maintenance Tickets" subtitle="Assign and track all reported faults." setIsSidebarOpen={setIsSidebarOpen} />
 
         <div className={styles.dataCard}>
           <div className={styles.cardHeader}>

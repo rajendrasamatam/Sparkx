@@ -1,7 +1,8 @@
 /* src/styles/Profile.module.css */
-.profilePage {
+/* A dedicated stylesheet for a clean and responsive profile page. */
+
+.pageContainer {
   display: flex;
-  background-color: var(--background-color);
 }
 
 .mainContent {
@@ -10,16 +11,12 @@
   margin-left: 260px; /* Sidebar width */
 }
 
-.header h1 {
-  margin: 0 0 0.25rem 0;
-  font-size: 2rem;
-  font-weight: 700;
-}
-
-.header p {
-  margin: 0 0 2rem 0;
-  font-size: 1rem;
-  color: #6b7280;
+/* --- Responsive Grid Layout --- */
+.profileGrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(400px, 1fr)); /* Responsive columns */
+  gap: 2rem;
+  align-items: start;
 }
 
 .card {
@@ -27,7 +24,6 @@
   padding: 2rem;
   border-radius: 8px;
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
-  margin-bottom: 2rem;
 }
 
 .cardTitle {
@@ -39,32 +35,41 @@
   padding-bottom: 1rem;
 }
 
+/* --- Form & Input Styles --- */
 .formGroup {
-  margin-bottom: 1.25rem;
+  margin-bottom: 1.5rem;
 }
 
 .formGroup label {
   display: block;
   font-weight: 500;
   margin-bottom: 0.5rem;
+  color: #374151;
 }
 
 .input {
   width: 100%;
-  max-width: 400px;
   padding: 0.75rem 1rem;
   font-size: 1rem;
   border: 1px solid var(--border-color);
   border-radius: 6px;
   box-sizing: border-box;
+  transition: border-color 0.2s, box-shadow 0.2s;
+}
+
+.input:focus {
+  outline: none;
+  border-color: var(--primary-color);
+  box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.2);
 }
 
 .input:disabled {
   background-color: #f3f4f6;
   cursor: not-allowed;
+  color: #6b7280;
 }
 
-.button {
+.primaryButton {
   background-color: var(--primary-color);
   color: white;
   padding: 0.75rem 1.5rem;
@@ -73,22 +78,26 @@
   border: none;
   border-radius: 6px;
   cursor: pointer;
-  transition: background-color 0.2s;
+  transition: all 0.2s;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
 }
 
-.button:hover {
+.primaryButton:hover {
   background-color: var(--primary-hover);
 }
 
-.button:disabled {
+.primaryButton:disabled {
   background-color: #9ca3af;
   cursor: wait;
 }
 
-/* ADD THIS TO THE END of src/styles/Profile.module.css */
 
+/* --- Avatar Upload Section --- */
 .avatarSection {
   display: flex;
+  flex-wrap: wrap;
   align-items: center;
   gap: 1.5rem;
   margin-bottom: 2rem;
@@ -102,20 +111,17 @@
   border: 3px solid var(--border-color);
 }
 
-.uploadButton {
-  display: flex;
-  align-items: center;
-  gap: 0.5rem;
-  background-color: transparent;
-  color: var(--primary-color);
-  border: 1px solid var(--primary-color);
-  padding: 0.5rem 1rem;
-  border-radius: 6px;
-  font-weight: 500;
-  cursor: pointer;
-  transition: all 0.2s;
+
+/* --- Media Queries for Responsiveness --- */
+@media (max-width: 1024px) {
+  .mainContent {
+    margin-left: 0;
+    padding: 1.5rem;
+  }
 }
 
-.uploadButton:hover {
-  background-color: #eef2ff;
+@media (max-width: 640px) {
+  .profileGrid {
+    grid-template-columns: 1fr; /* Stack columns on small screens */
+  }
 }

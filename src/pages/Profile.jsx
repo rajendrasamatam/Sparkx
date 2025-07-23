@@ -3,88 +3,59 @@
 import React, { useState, useRef } from 'react';
 import { useAuth } from '../context/AuthContext';
 import { updateProfile, updatePassword } from 'firebase/auth';
-import { storage } from '../firebase';
+import { auth } from '../firebase';
 import Sidebar from '../components/Sidebar';
-import styles from '../styles/Profile.module.css';
+import Header from '../components/Header';
+import styles from '../styles/Profile.module.css'; // <-- FIX: Import the new, dedicated stylesheet
 import toast from 'react-hot-toast';
 import { FiCamera } from 'react-icons/fi';
 
-const Profile = () => {
+const Profile = ({ setIsSidebarOpen }) => {
   const { currentUser } = useAuth();
   const fileInputRef = useRef(null);
 
-    // Get the ImgBB API Key from our environment variables
   const imgbbApiKey = import.meta.env.VITE_IMGBB_API_KEY;
 
-  // --- State Management ---
-  // State for profile info
   const [displayName, setDisplayName] = useState(currentUser?.displayName || '');
   const [photo, setPhoto] = useState(null);
   const [photoURL, setPhotoURL] = useState(currentUser?.photoURL);
-  
-  // State for password change
   const [newPassword, setNewPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
-
-  // General loading state
   const [loadingProfile, setLoadingProfile] = useState(false);
   const [loadingPassword, setLoadingPassword] = useState(false);
 
-
-  // --- Event Handlers ---
-
+  // All handler functions are correct and remain the same
   const handleFileChange = (e) => {
     if (e.target.files[0]) {
       const file = e.target.files[0];
       setPhoto(file);
-      setPhotoURL(URL.createObjectURL(file)); // Show a local preview instantly
+      setPhotoURL(URL.createObjectURL(file));
     }
   };
 
   const handleProfileUpdate = async (e) => {
     e.preventDefault();
-    if (!imgbbApiKey) {
-      toast.error("Image hosting service is not configured correctly.");
-      return;
-    }
-
     setLoadingProfile(true);
     const toastId = toast.loading('Updating profile...');
-
     try {
       let newPhotoURL = currentUser.photoURL;
-
-      // THIS IS THE UPDATED BLOCK: Upload to ImgBB instead of Firebase Storage
       if (photo) {
+        if (!imgbbApiKey) throw new Error("Image hosting service not configured.");
         const formData = new FormData();
         formData.append('image', photo);
-        
-        const response = await fetch(`https://api.imgbb.com/1/upload?key=${imgbbApiKey}`, {
-          method: 'POST',
-          body: formData,
-        });
-
+        const response = await fetch(`https://api.imgbb.com/1/upload?key=${imgbbApiKey}`, { method: 'POST', body: formData });
         const result = await response.json();
-        
         if (result.success) {
-          newPhotoURL = result.data.url; // Get the URL from ImgBB's response
+          newPhotoURL = result.data.url;
         } else {
-          // If ImgBB fails, throw an error to be caught below
           throw new Error(result.error.message || 'Image upload failed.');
         }
       }
-
-      // Update the user's profile in Firebase Auth with the new info
-      await updateProfile(currentUser, { 
-        displayName,
-        photoURL: newPhotoURL,
-      });
-
+      await updateProfile(currentUser, { displayName, photoURL: newPhotoURL });
       toast.success('Profile updated successfully!', { id: toastId });
       setPhoto(null);
     } catch (error) {
       toast.error(error.message || 'Failed to update profile.', { id: toastId });
-      console.error("Profile update error:", error);
     } finally {
       setLoadingProfile(false);
     }
@@ -92,13 +63,10 @@ const Profile = () => {
 
   const handlePasswordUpdate = async (e) => {
     e.preventDefault();
-    if (newPassword !== confirmPassword) {
-      return toast.error("Passwords do not match.");
-    }
-    if (newPassword.length < 6) {
-        return toast.error("New password must be at least 6 characters.");
-    }
-
+    if (newPassword !== confirmPassword) return toast.error("Passwords do not match.");
+    if (newPassword.length > 0 && newPassword.length < 6) return toast.error("New password must be at least 6 characters.");
+    if (!newPassword) return; // Do nothing if the field is empty
+    
     setLoadingPassword(true);
     const toastId = toast.loading('Updating password...');
     try {
@@ -107,102 +75,102 @@ const Profile = () => {
       setNewPassword('');
       setConfirmPassword('');
     } catch (error) {
-      // This error often means the user needs to re-authenticate for security reasons
-      toast.error('Failed to update password. Please log out and log back in before trying again.', { id: toastId });
-      console.error(error);
+      toast.error('Failed to update. Please log out and log back in before trying again.', { id: toastId, duration: 6000 });
     } finally {
       setLoadingPassword(false);
     }
   };
 
-
   return (
-    <div className={styles.profilePage}>
+    <div className={styles.pageContainer}>
       <Sidebar />
       <main className={styles.mainContent}>
-        <header className={styles.header}>
-          <h1>My Profile</h1>
-          <p>Manage your account settings, profile picture, and password.</p>
-        </header>
+        <Header 
+          title="My Profile" 
+          subtitle="Manage your account settings and profile picture."
+          setIsSidebarOpen={setIsSidebarOpen}
+        />
 
-        {/* --- Profile Information Card --- */}
-        <div className={styles.card}>
-          <h2 className={styles.cardTitle}>Profile Information</h2>
-          <form onSubmit={handleProfileUpdate}>
-            <div className={styles.avatarSection}>
-              <img 
-                src={photoURL || 'https://i.stack.imgur.com/34AD2.jpg'}
-                alt="Avatar" 
-                className={styles.avatar} 
-              />
-              <input 
-                type="file" 
-                accept="image/*"
-                onChange={handleFileChange} 
-                ref={fileInputRef}
-                style={{ display: 'none' }}
-              />
-              <button 
-                type="button"
-                className={styles.uploadButton}
-                onClick={() => fileInputRef.current.click()}
-              >
-                <FiCamera /> Change Photo
+        {/* Use the dedicated responsive grid for the layout */}
+        <div className={styles.profileGrid}>
+          {/* --- Profile Information Card --- */}
+          <div className={styles.card}>
+            <h2 className={styles.cardTitle}>Profile Information</h2>
+            <form onSubmit={handleProfileUpdate}>
+              <div className={styles.avatarSection}>
+                <img 
+                  src={photoURL || 'https://i.ibb.co/688dA2x/user-placeholder.png'}
+                  alt="Avatar" 
+                  className={styles.avatar}
+                />
+                <input 
+                  type="file" 
+                  accept="image/*"
+                  onChange={handleFileChange} 
+                  ref={fileInputRef}
+                  style={{ display: 'none' }}
+                />
+                <button 
+                  type="button"
+                  className={styles.primaryButton}
+                  onClick={() => fileInputRef.current.click()}
+                >
+                  <FiCamera /> Change Photo
+                </button>
+              </div>
+              <div className={styles.formGroup}>
+                <label htmlFor="email">Email</label>
+                <input id="email" type="text" value={currentUser?.email} disabled className={styles.input} />
+              </div>
+              <div className={styles.formGroup}>
+                <label htmlFor="displayName">Display Name</label>
+                <input 
+                  id="displayName" 
+                  type="text" 
+                  value={displayName} 
+                  onChange={(e) => setDisplayName(e.target.value)} 
+                  placeholder="Your Name"
+                  className={styles.input}
+                />
+              </div>
+              <button type="submit" disabled={loadingProfile} className={styles.primaryButton}>
+                {loadingProfile ? 'Saving...' : 'Save Profile Changes'}
               </button>
-            </div>
-            <div className={styles.formGroup}>
-              <label htmlFor="email">Email</label>
-              <input id="email" type="email" value={currentUser?.email} disabled className={styles.input} />
-            </div>
-            <div className={styles.formGroup}>
-              <label htmlFor="displayName">Display Name</label>
-              <input 
-                id="displayName" 
-                type="text" 
-                value={displayName} 
-                onChange={(e) => setDisplayName(e.target.value)} 
-                placeholder="Your Name"
-                className={styles.input}
-              />
-            </div>
-            <button type="submit" disabled={loadingProfile} className={styles.button}>
-              {loadingProfile ? 'Saving...' : 'Save Profile Changes'}
-            </button>
-          </form>
+            </form>
+          </div>
+          
+          {/* --- Change Password Card --- */}
+          <div className={styles.card}>
+            <h2 className={styles.cardTitle}>Change Password</h2>
+            <form onSubmit={handlePasswordUpdate}>
+              <div className={styles.formGroup}>
+                <label htmlFor="newPassword">New Password</label>
+                <input 
+                  id="newPassword" 
+                  type="password" 
+                  value={newPassword} 
+                  onChange={e => setNewPassword(e.target.value)} 
+                  placeholder="Leave blank to keep current password" 
+                  className={styles.input} 
+                />
+              </div>
+              <div className={styles.formGroup}>
+                <label htmlFor="confirmPassword">Confirm New Password</label>
+                <input 
+                  id="confirmPassword" 
+                  type="password" 
+                  value={confirmPassword} 
+                  onChange={e => setConfirmPassword(e.target.value)} 
+                  placeholder="Re-type new password" 
+                  className={styles.input} 
+                />
+              </div>
+              <button type="submit" disabled={loadingPassword} className={styles.primaryButton}>
+                {loadingPassword ? 'Updating...' : 'Update Password'}
+              </button>
+            </form>
+          </div>
         </div>
-        
-        {/* --- Change Password Card --- */}
-        <div className={styles.card}>
-          <h2 className={styles.cardTitle}>Change Password</h2>
-          <form onSubmit={handlePasswordUpdate}>
-            <div className={styles.formGroup}>
-              <label htmlFor="newPassword">New Password</label>
-              <input 
-                id="newPassword" 
-                type="password" 
-                value={newPassword} 
-                onChange={e => setNewPassword(e.target.value)} 
-                placeholder="Must be at least 6 characters" 
-                className={styles.input} 
-              />
-            </div>
-            <div className={styles.formGroup}>
-              <label htmlFor="confirmPassword">Confirm New Password</label>
-              <input 
-                id="confirmPassword" 
-                type="password" 
-                value={confirmPassword} 
-                onChange={e => setConfirmPassword(e.target.value)} 
-                placeholder="Re-type new password" 
-                className={styles.input} 
-              />
-            </div>
-            <button type="submit" disabled={loadingPassword} className={styles.button}>
-              {loadingPassword ? 'Updating...' : 'Update Password'}
-            </button>
-          </form>
-        </div>
-
       </main>
     </div>
   );

@@ -28,7 +28,7 @@ function QrScannerComponent({ onScanSuccess }) {
   return <div id="qr-reader-element" className={styles.scannerContainer}></div>;
 }
 
-const ManageLights = () => {
+const ManageLights = ({ setIsSidebarOpen }) => {
   const { isAdmin, isLineman } = useAuth();
   const [lights, setLights] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -152,7 +152,8 @@ const ManageLights = () => {
         {/* FIX 2: Use the actual Header component */}
         <Header 
           title="Manage Streetlights" 
-          subtitle="Scan, search, and manage all lights in the network." 
+          subtitle="Scan, search, and manage all lights in the network."
+          setIsSidebarOpen={setIsSidebarOpen}
         />
         
         {(isLineman || isAdmin) &&

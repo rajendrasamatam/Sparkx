@@ -54,11 +54,15 @@
 .profileInfo {
   display: flex;
   flex-direction: column;
+  overflow: hidden;
 }
 
 .profileName {
   font-weight: 500;
   color: var(--text-color);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 .profileEmail {
@@ -67,7 +71,6 @@
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
-  max-width: 150px;
 }
 
 .nav {
@@ -87,7 +90,7 @@
   color: #374151;
   text-decoration: none;
   font-weight: 500;
-  transition: background-color 0.2s;
+  transition: background-color 0.2s, color 0.2s;
 }
 
 .navLink:hover {
@@ -118,4 +121,44 @@
   background-color: #fce8e8;
   color: #c53030;
   border-color: #f7baba;
+}
+
+/* ADD THIS AT THE END of Sidebar.module.css */
+
+.sidebarHeader {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 2.5rem;
+}
+
+.closeButton {
+  display: none; /* Hidden on desktop */
+  background: none;
+  border: none;
+  font-size: 1.5rem;
+  cursor: pointer;
+  color: #6b7280;
+}
+
+@media (max-width: 1024px) {
+  .sidebar {
+    position: fixed;
+    left: 0;
+    top: 0;
+    height: 100%;
+    transform: translateX(-100%); /* Hidden by default */
+    transition: transform 0.3s ease-in-out;
+    z-index: 2000;
+    border-right: 1px solid var(--border-color);
+  }
+
+  .sidebar.open {
+    transform: translateX(0); /* Slides in when open */
+    box-shadow: 0 0 20px rgba(0,0,0,0.2);
+  }
+  
+  .closeButton {
+    display: block; /* Visible on mobile */
+  }
 }
