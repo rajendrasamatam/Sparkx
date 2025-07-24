@@ -3,6 +3,8 @@
 import React, { useState } from 'react';
 import { BrowserRouter as Router, Routes, Route, useLocation } from 'react-router-dom';
 import { Toaster } from 'react-hot-toast';
+import { useAuth } from './context/AuthContext';
+import useLocationTracker from './hooks/useLocationTracker';
 
 // Import Page Components
 import Home from './pages/Home';
@@ -12,7 +14,7 @@ import ForgotPassword from './pages/ForgotPassword';
 import Dashboard from './pages/Dashboard';
 import ManageLights from './pages/ManageLights';
 import LightDetails from './pages/LightDetails';
-import MyTasks from './pages/MyTasks';
+import Tasks  from './pages/Tasks'; // Renamed from MyTasks
 import ManageUsers from './pages/ManageUsers';
 import Profile from './pages/Profile';
 import NotFound from './pages/NotFound';
@@ -23,22 +25,23 @@ import ProtectedRoute from './components/ProtectedRoute';
 import AdminRoute from './components/AdminRoute';
 import Sidebar from './components/Sidebar';
 
-// A new Layout component to wrap our application and manage the sidebar state.
-// This prevents the sidebar from being shown on public pages like Login/Signup.
+// Logic-only component for location tracking
+const LocationTracker = () => {
+  useLocationTracker();
+  return null;
+};
+
+// Layout component to manage the sidebar
 const AppLayout = ({ children }) => {
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   const location = useLocation();
-
-  // Define which paths are considered "public" and should not show the sidebar/header.
   const publicPaths = ['/', '/login', '/signup', '/forgot-password'];
   const isPublicPage = publicPaths.includes(location.pathname);
 
   if (isPublicPage) {
-    // For public pages, just render the content without any layout wrappers.
-    return children(null); // Pass null because setIsSidebarOpen is not needed
+    return children(null);
   }
 
-  // For protected pages, render the main layout structure.
   return (
     <div className="app-container">
       <Sidebar isOpen={isSidebarOpen} setIsOpen={setIsSidebarOpen} />
@@ -49,11 +52,12 @@ const AppLayout = ({ children }) => {
   );
 };
 
-
 function App() {
   return (
     <>
       <Router>
+        <LocationTracker />
+        
         <AppLayout>
           {(setIsSidebarOpen) => (
             <Routes>
@@ -65,11 +69,10 @@ function App() {
 
               {/* Protected Routes for All Logged-in Users */}
               <Route element={<ProtectedRoute />}>
-                {/* Pass setIsSidebarOpen to every page that uses the Header component */}
                 <Route path="/dashboard" element={<Dashboard setIsSidebarOpen={setIsSidebarOpen} />} />
                 <Route path="/manage-lights" element={<ManageLights setIsSidebarOpen={setIsSidebarOpen} />} />
                 <Route path="/light/:id" element={<LightDetails setIsSidebarOpen={setIsSidebarOpen} />} />
-                <Route path="/my-tasks" element={<MyTasks setIsSidebarOpen={setIsSidebarOpen} />} />
+                <Route path="/tasks" element={<Tasks setIsSidebarOpen={setIsSidebarOpen} />} />
                 <Route path="/profile" element={<Profile setIsSidebarOpen={setIsSidebarOpen} />} />
               </Route>
 

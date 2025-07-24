@@ -1,3 +1,5 @@
+// src/pages/Login.jsx
+
 import React, { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import {
@@ -8,7 +10,7 @@ import {
   GoogleAuthProvider,
   signInWithPopup,
 } from 'firebase/auth';
-import { setDoc, doc, getDoc } from 'firebase/firestore';
+import { setDoc, doc, getDoc, GeoPoint } from 'firebase/firestore'; // Import GeoPoint
 import { auth, db } from '../firebase';
 import styles from '../styles/Form.module.css';
 import toast from 'react-hot-toast';
@@ -22,6 +24,8 @@ const Login = () => {
   const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
 
+  // --- THIS IS THE UPDATED FUNCTION ---
+  // Helper function to create user doc if it doesn't exist
   const createUserDocument = async (user) => {
     const userDocRef = doc(db, "users", user.uid);
     const docSnap = await getDoc(userDocRef);
@@ -30,10 +34,14 @@ const Login = () => {
         uid: user.uid,
         displayName: user.displayName,
         email: user.email,
-        role: 'lineman'
+        role: 'lineman',
+        // FIX: Add the missing fields with default values
+        lastKnownLocation: new GeoPoint(0, 0),
+        availability: 'inactive'
       });
     }
   };
+  // ------------------------------------
 
   const handleEmailSubmit = async (e) => {
     e.preventDefault();
@@ -50,6 +58,7 @@ const Login = () => {
     }
   };
 
+  // Google Sign-In logic remains the same, as it calls the helper above
   const handleGoogleSignIn = async () => {
     setLoading(true);
     const provider = new GoogleAuthProvider();
@@ -57,7 +66,7 @@ const Login = () => {
     try {
       const result = await signInWithPopup(auth, provider);
       await createUserDocument(result.user);
-      toast.success("Signed in successfully!");
+      toast.success("Signed in with Google successfully!");
       navigate('/dashboard');
     } catch (error) {
       toast.error("Failed to sign in with Google.");
@@ -72,7 +81,6 @@ const Login = () => {
         <div className={styles.iconWrapper}><FiZap size={28} /></div>
         <h2 className={styles.title}>Welcome Back!</h2>
         <p className={styles.subtitle}>Log in to access the control center.</p>
-
         <button onClick={handleGoogleSignIn} className={`${styles.button} ${styles.googleButton}`} disabled={loading}>
           <FcGoogle size={22} />
           <span>Continue with Google</span>

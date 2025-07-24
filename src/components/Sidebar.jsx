@@ -9,15 +9,15 @@ import styles from '../styles/Sidebar.module.css';
 import { FiLogOut, FiUser, FiZap, FiGrid, FiCpu, FiUsers, FiTag, FiClipboard, FiX } from 'react-icons/fi';
 import toast from 'react-hot-toast';
 
-// The component now accepts props to control its state
 const Sidebar = ({ isOpen, setIsOpen }) => {
-  const { currentUser, isAdmin } = useAuth();
+  // We need both isAdmin and isLineman from the context
+  const { currentUser, isAdmin, isLineman } = useAuth();
   const navigate = useNavigate();
 
   const handleLogout = async () => {
     try {
       await signOut(auth);
-      setIsOpen(false); // Close sidebar on logout
+      setIsOpen(false);
       navigate('/login');
       toast.success('Logged out successfully!');
     } catch (error) {
@@ -26,16 +26,14 @@ const Sidebar = ({ isOpen, setIsOpen }) => {
     }
   };
 
-  // A helper to close the sidebar after clicking a link
   const closeSidebar = () => {
-    if (window.innerWidth <= 1024) { // Only close on mobile-sized screens
+    if (window.innerWidth <= 1024) {
       setIsOpen(false);
     }
   };
 
   return (
     <>
-      {/* Overlay for mobile view to dim the background */}
       {isOpen && <div className={styles.overlay} onClick={() => setIsOpen(false)}></div>}
       
       <div className={`${styles.sidebar} ${isOpen ? styles.open : ''}`}>
@@ -66,18 +64,23 @@ const Sidebar = ({ isOpen, setIsOpen }) => {
             <FiGrid />
             <span>Dashboard</span>
           </NavLink>
-          <NavLink to="/my-tasks" className={({isActive}) => isActive ? `${styles.navLink} ${styles.activeLink}` : styles.navLink} onClick={closeSidebar}>
+
+          <NavLink to="/tasks" className={({isActive}) => isActive ? `${styles.navLink} ${styles.activeLink}` : styles.navLink} onClick={closeSidebar}>
             <FiClipboard />
-            <span>My Tasks</span>
+            <span>Tasks</span>
           </NavLink>
+
           <NavLink to="/manage-lights" className={({isActive}) => isActive ? `${styles.navLink} ${styles.activeLink}` : styles.navLink} onClick={closeSidebar}>
             <FiCpu />
             <span>Manage Lights</span>
           </NavLink>
+          
           <NavLink to="/profile" className={({isActive}) => isActive ? `${styles.navLink} ${styles.activeLink}` : styles.navLink} onClick={closeSidebar}>
             <FiUser />
             <span>My Profile</span>
           </NavLink>
+          
+          {/* Admin-only links */}
           {isAdmin && (
             <>
               <NavLink to="/manage-users" className={({isActive}) => isActive ? `${styles.navLink} ${styles.activeLink}` : styles.navLink} onClick={closeSidebar}>

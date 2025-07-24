@@ -8,7 +8,7 @@ import Modal from 'react-modal';
 import { Html5QrcodeScanner } from 'html5-qrcode';
 import { db, auth } from '../firebase';
 // --- FIX 1: Import GeoPoint ---
-import { collection, addDoc, onSnapshot, deleteDoc, doc, query, orderBy, updateDoc, where, getDocs, Timestamp, GeoPoint } from 'firebase/firestore';
+import { collection, addDoc, onSnapshot, deleteDoc, doc, query, orderBy, updateDoc, where, getDocs, Timestamp, GeoPoint, writeBatch } from 'firebase/firestore';
 import toast from 'react-hot-toast';
 import styles from '../styles/ManageLights.module.css';
 import { FiTrash2, FiEdit, FiCamera, FiXCircle } from 'react-icons/fi';
@@ -101,24 +101,35 @@ const ManageLights = ({ setIsSidebarOpen }) => {
     setIsEditModalOpen(true);
   };
 
-  const handleUpdateLight = async (e) => {
+// src/pages/ManageLights.jsx
+
+// Make sure you have these imports from 'firebase/firestore'
+// collection, doc, updateDoc, where, getDocs, Timestamp, writeBatch, query
+
+const handleUpdateLight = async (e) => {
     e.preventDefault();
     if (!currentLight || newStatus === currentLight.status) {
         setIsEditModalOpen(false);
         return;
-    };
+    }
 
     setIsUpdating(true);
     const toastId = toast.loading('Updating status...');
     const lightDocRef = doc(db, 'streetlights', currentLight.id);
 
-    try {
-        await updateDoc(lightDocRef, { status: newStatus });
-        toast.success('Status updated successfully!', { id: toastId });
+    // Use a batch write for atomicity
+    const batch = writeBatch(db);
+    
+    // Step 1: Always update the light's status in the batch
+    batch.update(lightDocRef, { status: newStatus });
 
+    try {
+        // Step 2: Conditionally create or resolve tickets
+        
+        // CASE A: A new fault is reported
         if (newStatus === 'faulty' && currentLight.status !== 'faulty') {
-            const ticketsCollectionRef = collection(db, "tickets");
-            await addDoc(ticketsCollectionRef, {
+            const ticketDocRef = doc(collection(db, "tickets"));
+            batch.set(ticketDocRef, {
                 lightId: currentLight.lightId,
                 lightDocId: currentLight.id,
                 status: 'Open',
@@ -128,9 +139,39 @@ const ManageLights = ({ setIsSidebarOpen }) => {
                 assignedTo_name: null,
                 resolvedAt: null,
             });
-            toast.success(`New ticket created for ${currentLight.lightId}.`);
         }
+        
+        // --- THIS IS THE NEW LOGIC ---
+        // CASE B: A fault has been resolved
+        else if (newStatus === 'working' && currentLight.status === 'faulty') {
+            // Find any "Open" ticket for this specific light
+            const ticketsCollectionRef = collection(db, "tickets");
+            const q = query(
+                ticketsCollectionRef, 
+                where("lightDocId", "==", currentLight.id),
+                where("status", "==", "Open")
+            );
+            
+            const querySnapshot = await getDocs(q);
+            
+            // If an open ticket exists, add an update operation to the batch to resolve it.
+            if (!querySnapshot.empty) {
+                const ticketDoc = querySnapshot.docs[0]; // Should only be one open ticket per light
+                const ticketDocRef = doc(db, "tickets", ticketDoc.id);
+                batch.update(ticketDocRef, {
+                    status: 'Resolved',
+                    resolvedAt: Timestamp.now()
+                    // We don't have an assigned lineman, so we leave those fields null
+                });
+                toast.success(`Automatically resolved open ticket for ${currentLight.lightId}.`);
+            }
+        }
+        // -----------------------------
 
+        // Step 3: Commit the batch
+        await batch.commit();
+        
+        toast.success('Status updated successfully!', { id: toastId });
         setIsEditModalOpen(false);
         setCurrentLight(null);
 
@@ -140,8 +181,7 @@ const ManageLights = ({ setIsSidebarOpen }) => {
     } finally {
         setIsUpdating(false);
     }
-  };
-
+};
   const handleDeleteLight = async (id) => {
     if (window.confirm("Are you sure?")) {
       const toastId = toast.loading('Deleting...');

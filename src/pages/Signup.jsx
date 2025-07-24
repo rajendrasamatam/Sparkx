@@ -8,15 +8,14 @@ import {
   createUserWithEmailAndPassword,
   updateProfile,
 } from 'firebase/auth';
-import { setDoc, doc, getDoc } from 'firebase/firestore';
+import { setDoc, doc, getDoc, GeoPoint } from 'firebase/firestore'; // <-- Import GeoPoint
 import { auth, db } from '../firebase';
 import { FcGoogle } from 'react-icons/fc';
-import { FiZap } from 'react-icons/fi'; // <-- STYLE CHANGE: Import the brand icon
+import { FiZap } from 'react-icons/fi';
 import styles from '../styles/Form.module.css';
 import toast from 'react-hot-toast';
 
 const Signup = () => {
-  // --- All of your state and logic remains exactly the same ---
   const [formData, setFormData] = useState({
     displayName: '',
     email: '',
@@ -36,10 +35,15 @@ const Signup = () => {
         displayName: displayNameOverride || user.displayName,
         email: user.email,
         role: 'lineman',
+        // FIX: Add the missing fields with default values
+        lastKnownLocation: new GeoPoint(0, 0),
+        availability: 'inactive'
       });
     }
   };
+  // ----------------------------------------
 
+  // Google Sign-In logic remains the same, as it calls the helper above
   const handleGoogleSignIn = async () => {
     setLoading(true);
     const provider = new GoogleAuthProvider();
@@ -47,15 +51,13 @@ const Signup = () => {
     try {
       const result = await signInWithPopup(auth, provider);
       await createUserDocument(result.user);
-      toast.success('Account created successfully!');
+      toast.success("Account created successfully!");
       navigate('/dashboard');
-    } catch (error) {
-      toast.error('Failed to sign up with Google.');
-    } finally {
-      setLoading(false);
-    }
+    } catch (error) { toast.error("Failed to sign up with Google."); } 
+    finally { setLoading(false); }
   };
 
+  // Live Validation logic remains the same
   const validateField = (name, value) => {
     let error = '';
     switch (name) {
@@ -79,15 +81,12 @@ const Signup = () => {
     setErrors((prevErrors) => ({ ...prevErrors, [name]: error }));
   };
   
-  // A function to validate the whole form at once
   const validateForm = () => {
-    // Manually trigger validation for all fields
     validateField('displayName', formData.displayName);
     validateField('email', formData.email);
     validateField('password', formData.password);
     validateField('confirmPassword', formData.confirmPassword);
     
-    // Check if any error messages exist after validation
     return (
       !(!formData.displayName.trim()) &&
       !( !formData.email || !/\S+@\S+\.\S+/.test(formData.email) ) &&
@@ -117,7 +116,7 @@ const Signup = () => {
       const userCredential = await createUserWithEmailAndPassword(auth, formData.email, formData.password);
       const user = userCredential.user;
       await updateProfile(user, { displayName: formData.displayName });
-      await createUserDocument(user, formData.displayName);
+      await createUserDocument(user, formData.displayName); // Calls the updated helper
       toast.success('Account created successfully!');
       navigate('/dashboard');
     } catch (err) {
@@ -132,7 +131,7 @@ const Signup = () => {
     }
   };
 
-  // --- JSX has been updated for the new styles ---
+  // JSX structure remains exactly the same
   return (
     <div className={styles.pageContainer}>
       <div className={styles.formContainer}>
@@ -141,7 +140,6 @@ const Signup = () => {
         </div>
         <h2 className={styles.title}>Create Your Account</h2>
         <p className={styles.subtitle}>Get started with the Sparkx platform.</p>
-
         <button
           onClick={handleGoogleSignIn}
           className={`${styles.button} ${styles.googleButton}`}
@@ -150,11 +148,9 @@ const Signup = () => {
           <FcGoogle size={22} />
           <span>Sign Up with Google</span>
         </button>
-
         <div className={styles.divider}>
           <span>OR</span>
         </div>
-
         <form onSubmit={handleSubmit} className={styles.form}>
           <input
             name="displayName"
@@ -168,7 +164,6 @@ const Signup = () => {
           {errors.displayName && (
             <p className={styles.validationError}>{errors.displayName}</p>
           )}
-
           <input
             name="email"
             type="email"
@@ -179,7 +174,6 @@ const Signup = () => {
             className={styles.input}
           />
           {errors.email && <p className={styles.validationError}>{errors.email}</p>}
-
           <input
             name="password"
             type="password"
@@ -192,7 +186,6 @@ const Signup = () => {
           {errors.password && (
             <p className={styles.validationError}>{errors.password}</p>
           )}
-
           <input
             name="confirmPassword"
             type="password"
@@ -205,7 +198,6 @@ const Signup = () => {
           {errors.confirmPassword && (
             <p className={styles.validationError}>{errors.confirmPassword}</p>
           )}
-
           <button type="submit" disabled={loading} className={styles.button}>
             {loading ? 'Creating Account...' : 'Sign Up'}
           </button>
