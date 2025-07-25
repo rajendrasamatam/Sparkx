@@ -12,7 +12,7 @@ import { useAuth } from '../context/AuthContext';
 import { Link } from 'react-router-dom';
 import { FiCheckCircle, FiNavigation } from 'react-icons/fi';
 
-const SEARCH_RADIUS_METERS = 25000; // 25 km
+const SEARCH_RADIUS_METERS = 10000; // Increased to 10 km for better testing
 
 const Tasks = ({ setIsSidebarOpen }) => {
   const { currentUser } = useAuth();
@@ -49,27 +49,17 @@ const Tasks = ({ setIsSidebarOpen }) => {
         if (!isMounted) return;
         
         const { latitude, longitude } = position.coords;
-        // This is a plain JS object, which is correct
         const linemanLocation = { latitude, longitude };
         
         const openQuery = query(collection(db, 'tickets'), where("status", "==", "Open"));
         unsubscribeOpen = onSnapshot(openQuery, (snapshot) => {
           const openTickets = snapshot.docs.map(doc => ({ ...doc.data(), id: doc.id }));
           
-          // --- THIS IS THE FIX ---
           const tasksWithDistance = openTickets.map(ticket => {
-            // Create a plain JS object from the Firestore GeoPoint
-            const ticketLocationObject = {
-              latitude: ticket.location.latitude,
-              longitude: ticket.location.longitude,
-            };
-            
-            // Now, we pass two clean, predictable objects to getDistance
+            const ticketLocationObject = { latitude: ticket.location.latitude, longitude: ticket.location.longitude };
             const distance = getDistance(linemanLocation, ticketLocationObject);
-            
             return { ...ticket, distance };
           });
-          // ------------------------
           
           const nearby = tasksWithDistance
             .filter(task => task.distance <= SEARCH_RADIUS_METERS)
@@ -98,21 +88,32 @@ const Tasks = ({ setIsSidebarOpen }) => {
     };
   }, [currentUser]);
 
+  // --- THIS IS THE UPDATED FUNCTION ---
   const handleAcceptTask = async (task) => {
     if (!currentUser) return;
     setIsUpdating(task.id);
     const toastId = toast.loading(`Accepting task for ${task.lightId}...`);
+    
     const ticketDocRef = doc(db, 'tickets', task.id);
+    const lightDocRef = doc(db, 'streetlights', task.lightDocId); // Reference to the streetlight
+
     try {
+      // Use a transaction to ensure the ticket is still "Open" before claiming it
       await runTransaction(db, async (transaction) => {
         const ticketDoc = await transaction.get(ticketDocRef);
         if (!ticketDoc.exists() || ticketDoc.data().status !== 'Open') {
           throw new Error("This ticket is no longer available.");
         }
+        
+        // Add both updates to the transaction
         transaction.update(ticketDocRef, {
           status: 'Assigned',
           assignedTo_uid: currentUser.uid,
           assignedTo_name: currentUser.displayName,
+        });
+
+        transaction.update(lightDocRef, {
+          status: 'under repair' // <-- THE CRITICAL CHANGE
         });
       });
       toast.success(`Task ${task.lightId} is now assigned to you!`, { id: toastId });
@@ -122,6 +123,7 @@ const Tasks = ({ setIsSidebarOpen }) => {
       setIsUpdating(null);
     }
   };
+  // ------------------------------------
 
   const handleResolveTask = async (task) => {
     if (!window.confirm(`Are you sure you want to resolve the task for ${task.lightId}?`)) return;

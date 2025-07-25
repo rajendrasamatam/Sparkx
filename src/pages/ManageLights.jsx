@@ -7,15 +7,14 @@ import Header from '../components/Header';
 import Modal from 'react-modal';
 import { Html5QrcodeScanner } from 'html5-qrcode';
 import { db, auth } from '../firebase';
-// --- FIX 1: Import GeoPoint ---
-import { collection, addDoc, onSnapshot, deleteDoc, doc, query, orderBy, updateDoc, where, getDocs, Timestamp, GeoPoint, writeBatch } from 'firebase/firestore';
+import { collection, addDoc, onSnapshot, deleteDoc, doc, query, orderBy, updateDoc, where, getDocs, Timestamp, GeoPoint } from 'firebase/firestore';
 import toast from 'react-hot-toast';
 import styles from '../styles/ManageLights.module.css';
 import { FiTrash2, FiEdit, FiCamera, FiXCircle } from 'react-icons/fi';
 import StatusBadge from '../components/StatusBadge';
 import { useAuth } from '../context/AuthContext';
 
-// QrScannerComponent remains the same and is correct.
+// QrScannerComponent remains the same.
 function QrScannerComponent({ onScanSuccess }) {
   useEffect(() => {
     const scanner = new Html5QrcodeScanner("qr-reader-element", { qrbox: { width: 250, height: 250 }, fps: 5 }, false);
@@ -30,7 +29,9 @@ function QrScannerComponent({ onScanSuccess }) {
 }
 
 const ManageLights = ({ setIsSidebarOpen }) => {
-  const { isAdmin, isLineman } = useAuth();
+  // --- CHANGE: isLineman is no longer needed here for UI logic ---
+  const { isAdmin } = useAuth();
+  
   const [lights, setLights] = useState([]);
   const [loading, setLoading] = useState(true);
   const [showScanner, setShowScanner] = useState(false);
@@ -45,6 +46,7 @@ const ManageLights = ({ setIsSidebarOpen }) => {
 
   const lightsCollectionRef = collection(db, 'streetlights');
 
+  // All logic functions remain the same.
   useEffect(() => {
     const q = query(lightsCollectionRef, orderBy('installedAt', 'desc'));
     const unsubscribe = onSnapshot(q, (snapshot) => {
@@ -64,30 +66,18 @@ const ManageLights = ({ setIsSidebarOpen }) => {
   const totalPages = Math.ceil(filteredLights.length / itemsPerPage);
   const paginate = (pageNumber) => setCurrentPage(pageNumber);
 
-  // --- THIS IS THE CORRECTED FUNCTION ---
   const onScanSuccess = async (lightId) => {
     setShowScanner(false);
     const toastId = toast.loading(`Processing ID: ${lightId}...`);
     try {
       const q = query(lightsCollectionRef, where("lightId", "==", lightId));
       if (!(await getDocs(q)).empty) return toast.error(`Error: Light ID ${lightId} is already registered.`, { id: toastId });
-      
       toast.loading('Getting GPS location...', { id: toastId });
       navigator.geolocation.getCurrentPosition(
         async (pos) => {
           const { latitude, longitude } = pos.coords;
-          
-          // FIX 2: Create a Firestore GeoPoint from the coordinates
           const locationGeoPoint = new GeoPoint(latitude, longitude);
-          
-          await addDoc(lightsCollectionRef, { 
-            lightId, 
-            location: locationGeoPoint, // <-- Use the GeoPoint object here
-            status: 'working', 
-            installedAt: Timestamp.now(), 
-            registeredBy: auth.currentUser.displayName || auth.currentUser.email 
-          });
-          
+          await addDoc(lightsCollectionRef, { lightId, location: locationGeoPoint, status: 'working', installedAt: Timestamp.now(), registeredBy: auth.currentUser.displayName || auth.currentUser.email });
           toast.success(`Success! Light ${lightId} registered.`, { id: toastId });
         },
         () => toast.error('Could not get location. Enable GPS.', { id: toastId }), { enableHighAccuracy: true }
@@ -101,35 +91,21 @@ const ManageLights = ({ setIsSidebarOpen }) => {
     setIsEditModalOpen(true);
   };
 
-// src/pages/ManageLights.jsx
-
-// Make sure you have these imports from 'firebase/firestore'
-// collection, doc, updateDoc, where, getDocs, Timestamp, writeBatch, query
-
-const handleUpdateLight = async (e) => {
+  const handleUpdateLight = async (e) => {
     e.preventDefault();
     if (!currentLight || newStatus === currentLight.status) {
         setIsEditModalOpen(false);
         return;
-    }
-
+    };
     setIsUpdating(true);
     const toastId = toast.loading('Updating status...');
     const lightDocRef = doc(db, 'streetlights', currentLight.id);
-
-    // Use a batch write for atomicity
-    const batch = writeBatch(db);
-    
-    // Step 1: Always update the light's status in the batch
-    batch.update(lightDocRef, { status: newStatus });
-
     try {
-        // Step 2: Conditionally create or resolve tickets
-        
-        // CASE A: A new fault is reported
+        await updateDoc(lightDocRef, { status: newStatus });
+        toast.success('Status updated successfully!', { id: toastId });
         if (newStatus === 'faulty' && currentLight.status !== 'faulty') {
-            const ticketDocRef = doc(collection(db, "tickets"));
-            batch.set(ticketDocRef, {
+            const ticketsCollectionRef = collection(db, "tickets");
+            await addDoc(ticketsCollectionRef, {
                 lightId: currentLight.lightId,
                 lightDocId: currentLight.id,
                 status: 'Open',
@@ -139,49 +115,18 @@ const handleUpdateLight = async (e) => {
                 assignedTo_name: null,
                 resolvedAt: null,
             });
+            toast.success(`New ticket created for ${currentLight.lightId}.`);
         }
-        
-        // --- THIS IS THE NEW LOGIC ---
-        // CASE B: A fault has been resolved
-        else if (newStatus === 'working' && currentLight.status === 'faulty') {
-            // Find any "Open" ticket for this specific light
-            const ticketsCollectionRef = collection(db, "tickets");
-            const q = query(
-                ticketsCollectionRef, 
-                where("lightDocId", "==", currentLight.id),
-                where("status", "==", "Open")
-            );
-            
-            const querySnapshot = await getDocs(q);
-            
-            // If an open ticket exists, add an update operation to the batch to resolve it.
-            if (!querySnapshot.empty) {
-                const ticketDoc = querySnapshot.docs[0]; // Should only be one open ticket per light
-                const ticketDocRef = doc(db, "tickets", ticketDoc.id);
-                batch.update(ticketDocRef, {
-                    status: 'Resolved',
-                    resolvedAt: Timestamp.now()
-                    // We don't have an assigned lineman, so we leave those fields null
-                });
-                toast.success(`Automatically resolved open ticket for ${currentLight.lightId}.`);
-            }
-        }
-        // -----------------------------
-
-        // Step 3: Commit the batch
-        await batch.commit();
-        
-        toast.success('Status updated successfully!', { id: toastId });
         setIsEditModalOpen(false);
         setCurrentLight(null);
-
     } catch (error) {
         toast.error('Failed to update status. Check permissions.', { id: toastId });
         console.error("Update error:", error);
     } finally {
         setIsUpdating(false);
     }
-};
+  };
+
   const handleDeleteLight = async (id) => {
     if (window.confirm("Are you sure?")) {
       const toastId = toast.loading('Deleting...');
@@ -204,24 +149,24 @@ const handleUpdateLight = async (e) => {
           setIsSidebarOpen={setIsSidebarOpen}
         />
         
-        {(isLineman || isAdmin) &&
-          <div className={styles.card}>
+        {/* The scanner is available to both roles */}
+        <div className={styles.card}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-              <h2 className={styles.cardTitle} style={{ border: 'none', marginBottom: 0 }}>Register New Light</h2>
-              <button className={styles.primaryButton} onClick={() => setShowScanner(prev => !prev)}>
-                {showScanner ? <FiXCircle/> : <FiCamera/>}
-                <span>{showScanner ? 'Close Scanner' : 'Open Scanner'}</span>
-              </button>
+                <h2 className={styles.cardTitle} style={{ border: 'none', marginBottom: 0 }}>Register New Light</h2>
+                <button className={styles.primaryButton} onClick={() => setShowScanner(prev => !prev)}>
+                    {showScanner ? <FiXCircle/> : <FiCamera/>}
+                    <span>{showScanner ? 'Close Scanner' : 'Open Scanner'}</span>
+                </button>
             </div>
             {showScanner && (
-              <div className={styles.scannerSection}>
-                <p style={{ color: '#6b7280', marginTop: 0 }}>Point the camera at a valid QR Code.</p>
-                <QrScannerComponent onScanSuccess={onScanSuccess} />
-              </div>
+                <div className={styles.scannerSection}>
+                    <p style={{ color: '#6b7280', marginTop: 0 }}>Point the camera at a valid QR Code.</p>
+                    <QrScannerComponent onScanSuccess={onScanSuccess} />
+                </div>
             )}
-          </div>
-        }
+        </div>
 
+        {/* The Edit modal is still here because the admin needs it */}
         {currentLight && (
           <Modal isOpen={isEditModalOpen} onRequestClose={() => setIsEditModalOpen(false)} className={styles.modal} overlayClassName={styles.overlay}>
             <button onClick={() => setIsEditModalOpen(false)} className={styles.closeButton}>×</button>
@@ -249,7 +194,7 @@ const handleUpdateLight = async (e) => {
           </div>
           <div className={styles.tableContainer}>
               <table className={styles.lightsTable}>
-                  <thead><tr><th>ID</th><th>Location</th><th>Status</th><th>Installed On</th><th className={styles.actionsCell}>Actions</th></tr></thead>
+                  <thead><tr><th>ID</th><th>Location</th><th>Status</th><th>Installed On</th>{isAdmin && <th className={styles.actionsCell}>Actions</th>}</tr></thead>
                   <tbody>
                     {loading ? (<tr><td colSpan="5" className={styles.emptyState}>Loading...</td></tr>) : 
                      currentItems.length === 0 ? (<tr><td colSpan="5" className={styles.emptyState}>No lights match the current filter.</td></tr>) : 
@@ -260,8 +205,13 @@ const handleUpdateLight = async (e) => {
                             <td><StatusBadge status={light.status} /></td>
                             <td>{formatDate(light.installedAt)}</td>
                             <td className={styles.actionsCell}>
-                                {(isLineman || isAdmin) && <button onClick={() => handleEditClick(light)} className={`${styles.actionButton} ${styles.edit}`} title="Edit"><FiEdit /></button>}
-                                {isAdmin && <button onClick={() => handleDeleteLight(light.id)} className={`${styles.actionButton} ${styles.delete}`} title="Delete"><FiTrash2 /></button>}
+                                {/* --- THE UI FIX IS HERE --- */}
+                                {isAdmin && (
+                                  <>
+                                    <button onClick={() => handleEditClick(light)} className={`${styles.actionButton} ${styles.edit}`} title="Edit"><FiEdit /></button>
+                                    <button onClick={() => handleDeleteLight(light.id)} className={`${styles.actionButton} ${styles.delete}`} title="Delete"><FiTrash2 /></button>
+                                  </>
+                                )}
                             </td>
                         </tr>
                      )))}
@@ -275,12 +225,15 @@ const handleUpdateLight = async (e) => {
                   (currentItems.map(light => (
                     <div key={light.id} className={styles.mobileCard}>
                         <div className={styles.mobileCardHeader}>
-                            <div className={styles.mobileCardTitle}>
-                                <Link to={`/light/${light.id}`} className={styles.idLink}>{light.lightId}</Link>
-                            </div>
+                            <div className={styles.mobileCardTitle}><Link to={`/light/${light.id}`} className={styles.idLink}>{light.lightId}</Link></div>
                             <div className={styles.mobileCardActions}>
-                                {(isLineman || isAdmin) && <button onClick={() => handleEditClick(light)} className={`${styles.actionButton} ${styles.edit}`} title="Edit"><FiEdit /></button>}
-                                {isAdmin && <button onClick={() => handleDeleteLight(light.id)} className={`${styles.actionButton} ${styles.delete}`} title="Delete"><FiTrash2 /></button>}
+                                {/* --- AND THE UI FIX IS HERE --- */}
+                                {isAdmin && (
+                                  <>
+                                    <button onClick={() => handleEditClick(light)} className={`${styles.actionButton} ${styles.edit}`} title="Edit"><FiEdit /></button>
+                                    <button onClick={() => handleDeleteLight(light.id)} className={`${styles.actionButton} ${styles.delete}`} title="Delete"><FiTrash2 /></button>
+                                  </>
+                                )}
                             </div>
                         </div>
                         <dl className={styles.mobileCardContent}>

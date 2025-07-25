@@ -14,17 +14,21 @@ const Sidebar = ({ isOpen, setIsOpen }) => {
   const { currentUser, isAdmin, isLineman } = useAuth();
   const navigate = useNavigate();
 
+// src/components/Sidebar.jsx
+
   const handleLogout = async () => {
-    try {
-      await signOut(auth);
-      setIsOpen(false);
-      navigate('/login');
-      toast.success('Logged out successfully!');
-    } catch (error) {
-      console.error('Failed to log out', error);
-      toast.error('Failed to log out.');
-    }
-  };
+      const toastId = toast.loading('Logging out...');
+      try {
+        await signOut(auth);
+        // We don't need a success toast here because navigating away is clear feedback.
+        // Or if you want one, you can update the existing toast.
+        toast.success('Logged out successfully!', { id: toastId });
+        navigate('/login');
+      } catch (error) {
+        console.error('Failed to log out', error);
+        toast.error('Failed to log out.', { id: toastId });
+      }
+    };
 
   const closeSidebar = () => {
     if (window.innerWidth <= 1024) {
