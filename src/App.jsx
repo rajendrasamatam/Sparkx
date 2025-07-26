@@ -23,6 +23,7 @@ import Tickets from './pages/Tickets';
 // Import Route & Layout Components
 import ProtectedRoute from './components/ProtectedRoute';
 import AdminRoute from './components/AdminRoute';
+import PublicRoute from './components/PublicRoute';
 import Sidebar from './components/Sidebar';
 
 // Logic-only component for location tracking
@@ -62,6 +63,7 @@ function App() {
           {(setIsSidebarOpen) => (
             <Routes>
               {/* Public Routes */}
+              <Route element={<PublicRoute />}></Route>
               <Route path="/" element={<Home />} />
               <Route path="/signup" element={<Signup />} />
               <Route path="/login" element={<Login />} />
