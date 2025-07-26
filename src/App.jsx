@@ -14,7 +14,7 @@ import ForgotPassword from './pages/ForgotPassword';
 import Dashboard from './pages/Dashboard';
 import ManageLights from './pages/ManageLights';
 import LightDetails from './pages/LightDetails';
-import Tasks  from './pages/Tasks'; // Renamed from MyTasks
+import Tasks from './pages/Tasks'; // Assuming you renamed MyTasks to Tasks
 import ManageUsers from './pages/ManageUsers';
 import Profile from './pages/Profile';
 import NotFound from './pages/NotFound';
@@ -62,12 +62,15 @@ function App() {
         <AppLayout>
           {(setIsSidebarOpen) => (
             <Routes>
-              {/* Public Routes */}
-              <Route element={<PublicRoute />}></Route>
-              <Route path="/" element={<Home />} />
-              <Route path="/signup" element={<Signup />} />
-              <Route path="/login" element={<Login />} />
-              <Route path="/forgot-password" element={<ForgotPassword />} />
+              {/* --- THIS IS THE CORRECTED SECTION --- */}
+              {/* Public Routes - Only accessible when NOT logged in */}
+              <Route element={<PublicRoute />}>
+                <Route path="/" element={<Home />} />
+                <Route path="/signup" element={<Signup />} />
+                <Route path="/login" element={<Login />} />
+                <Route path="/forgot-password" element={<ForgotPassword />} />
+              </Route>
+              {/* ------------------------------------ */}
 
               {/* Protected Routes for All Logged-in Users */}
               <Route element={<ProtectedRoute />}>
