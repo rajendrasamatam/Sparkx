@@ -66,6 +66,124 @@
   color: var(--text-color);
 }
 
+.notificationBellWrapper {
+  position: relative;
+}
+
+.notificationBell {
+  /* This is now a button for better accessibility */
+  background: none;
+  border: none;
+  padding: 0;
+  position: relative;
+  font-size: 1.5rem;
+  color: #6b7280;
+  cursor: pointer;
+  transition: color 0.2s;
+}
+
+.notificationBell:hover {
+  color: var(--primary-color);
+}
+
+.notificationDot {
+  position: absolute;
+  top: 2px;
+  right: 2px;
+  width: 8px;
+  height: 8px;
+  background-color: #ef4444;
+  border-radius: 50%;
+  border: 1.5px solid white;
+}
+
+.notificationPanel {
+  position: absolute;
+  top: calc(100% + 1rem);
+  right: 0;
+  width: 350px;
+  background-color: var(--card-background);
+  border-radius: 8px;
+  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1);
+  border: 1px solid var(--border-color);
+  z-index: 1001;
+  overflow: hidden;
+}
+
+.panelHeader {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 0.75rem 1rem;
+  border-bottom: 1px solid var(--border-color);
+}
+
+.panelHeader h3 {
+  margin: 0;
+  font-size: 1rem;
+}
+
+.panelHeader button {
+  background: none;
+  border: none;
+  font-size: 1.5rem;
+  line-height: 1;
+  cursor: pointer;
+  color: #9ca3af;
+}
+
+.panelBody {
+  max-height: 400px;
+  overflow-y: auto;
+}
+
+.noNotifications {
+  padding: 2rem;
+  text-align: center;
+  color: #6b7280;
+}
+
+.notificationItem {
+  display: flex;
+  align-items: flex-start;
+  gap: 1rem;
+  padding: 1rem;
+  border-bottom: 1px solid var(--border-color);
+  text-decoration: none;
+  color: inherit;
+  transition: background-color 0.2s;
+}
+.notificationItem:last-child {
+  border-bottom: none;
+}
+
+.notificationItem:hover {
+  background-color: #f9fafb;
+}
+
+.faultIcon, .resolvedIcon {
+  font-size: 1.25rem;
+  margin-top: 0.25rem;
+  flex-shrink: 0;
+}
+.faultIcon { color: #ef4444; }
+.resolvedIcon { color: #10b981; }
+
+.notificationContent {
+  flex-grow: 1;
+}
+
+.notificationText {
+  margin: 0;
+  font-size: 0.875rem;
+  line-height: 1.5;
+}
+
+.notificationTime {
+  font-size: 0.75rem;
+  color: #9ca3af;
+}
+
 @media (max-width: 1024px) {
   .header {
     padding: 0;
